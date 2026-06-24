@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<m<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -32,7 +32,8 @@ input,button{font-family:'Inter',sans-serif;}
 @media(max-width:768px){.grid{grid-template-columns:1fr;}.code-block pre{font-size:.68rem;}}
 </style>
 </head>
-<body>.  <div id="login" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
+<body>
+<div id="login" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
 <div style="width:100%;max-width:380px;">
 <div style="text-align:center;margin-bottom:2rem;"><span class="logo"><span>kon</span>talo</span></div>
 <div class="card">
@@ -42,7 +43,6 @@ input,button{font-family:'Inter',sans-serif;}
 </div>
 </div>
 </div>
-
 <div id="app" class="hidden">
 <div class="ticker-wrap"><div class="ticker-track" id="ticker"><span class="ticker-item"><span class="spinner"></span> Loading…</span></div></div>
 <div style="padding:2rem;max-width:1000px;margin:0 auto;">
@@ -56,11 +56,10 @@ input,button{font-family:'Inter',sans-serif;}
 </div>
 <div id="content"></div>
 </div>
-</div>. <script>
+</div>.  <script>
 const API_BASE="https://contabilidad-de-datos.onrender.com";
 const seed=[210,195,230,215,240,225];
 let fx=null,com=null,activeTab="dashboard";
-
 function login(){
 if(!document.getElementById("email").value){alert("Enter email");return;}
 document.getElementById("login").classList.add("hidden");
@@ -78,9 +77,7 @@ document.getElementById("tabPipe").classList.toggle("active",tab==="pipeline");
 if(tab==="dashboard")renderDashboard();
 else renderPipeline();
 }
-
 function fmt(n){return n>=1e6?"$"+(n/1e6).toFixed(1)+"M":n>=1000?"$"+(n/1000).toFixed(0)+"K":"$"+n;}
-
 async function fetchForecast(){
 const res=await fetch(API_BASE+"/forecast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({values:seed})});
 if(!res.ok)throw new Error("API "+res.status);
@@ -99,7 +96,6 @@ fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currenci
 return{gold:g.status==="fulfilled"?+(1/g.value.xau.usd).toFixed(2):null,silver:s.status==="fulfilled"?+(1/s.value.xag.usd).toFixed(2):null};
 }catch(e){return{gold:null,silver:null};}
 }
-
 function renderTicker(){
 const t=document.getElementById("ticker");
 if(!fx){t.innerHTML='<span class="ticker-item" style="color:var(--danger)">⚠ Rates unavailable</span>';return;}
@@ -115,12 +111,11 @@ com?.silver?{l:"SILVER",v:"$"+com.silver.toFixed(2)}:null,
 const all=[...items,...items];
 t.innerHTML=all.map(i=>`<span class="ticker-item"><span style="color:var(--faint)">${i.l}</span><span style="color:var(--accent);font-weight:600">${i.v}</span></span>`).join("");
 }
-
 async function loadAll(){
 try{fx=await fetchFX();com=await fetchCom();renderTicker();}catch(e){renderTicker();}
 renderDashboard();
 }
-</script>. <script>
+</script><script>
 async function renderDashboard(){
 const c=document.getElementById("content");
 c.innerHTML='<div class="card"><span class="spinner"></span> Loading dashboard…</div>';
@@ -142,117 +137,23 @@ c.innerHTML=`
 ${forecastHTML}
 `;
 }
-</script> <script>
+</script>. <script>
 function renderPipeline(){
 const c=document.getElementById("content");
 c.innerHTML=`
 <h2 style="font-family:'Space Grotesk',sans-serif;margin-bottom:.3rem">Data Engineering</h2>
 <p style="color:var(--muted);font-size:.85rem;margin-bottom:1.25rem">How Kontalo processes financial data at scale</p>
-
 <div style="margin-bottom:1.5rem;">
 <span class="tech-badge">⚡ Apache Spark</span>
 <span class="tech-badge">🔄 Apache Airflow</span>
 <span class="tech-badge">☁️ Azure</span>
 <span class="tech-badge">🗄️ Advanced SQL</span>
 </div>
-
 <div class="pipeline-step"><span>📥</span> <div><b>Ingest</b> — Invoice & transaction data collected from clients</div></div>
 <div class="pipeline-step"><span>☁️</span> <div><b>Azure Data Lake Storage</b> — Raw data lands here before processing</div></div>
 <div class="pipeline-step"><span>⚡</span> <div><b>Apache Spark</b> — Distributed processing of large transaction volumes</div></div>
 <div class="pipeline-step"><span>🔄</span> <div><b>Apache Airflow</b> — Orchestrates daily ETL jobs automatically</div></div>
 <div class="pipeline-step"><span>🗄️</span> <div><b>Azure SQL Database</b> — Cleaned data stored for queries</div></div>
 <div class="pipeline-step"><span>🟢</span> <div><b>Dashboard</b> — You see live projections, right here</div></div>
-
-<h3 style="font-family:'Space Grotesk',sans-serif;margin:2rem 0 1rem;font-size:1.1rem">⚡ PySpark — Processing transactions at scale</h3>
-<div class="code-block"><pre>from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, sum as _sum, avg
-
-spark = SparkSession.builder \\
-    .appName("KontaloTransactions") \\
-    .getOrCreate()
-
-df = spark.read.format("delta") \\
-    .load("/mnt/datalake/transactions/")
-
-monthly_cashflow = df.groupBy("company_id", "month") \\
-    .agg(
-        _sum("amount").alias("total_inflow"),
-        avg("amount").alias("avg_transaction")
-    ) \\
-    .orderBy("month")
-
-monthly_cashflow.write.format("delta") \\
-    .mode("overwrite") \\
-    .save("/mnt/datalake/processed/cashflow/")</pre></div>
-
-<h3 style="font-family:'Space Grotesk',sans-serif;margin:2rem 0 1rem;font-size:1.1rem">🔄 Airflow — Daily ETL orchestration</h3>
-<div class="code-block"><pre>from airflow import DAG
-from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
-
-default_args = {
-    "owner": "kontalo",
-    "retries": 2,
-    "retry_delay": timedelta(minutes=5),
-}
-
-with DAG(
-    "kontalo_daily_etl",
-    default_args=default_args,
-    schedule_interval="0 3 * * *",
-    start_date=datetime(2026, 1, 1),
-    catchup=False,
-) as dag:
-
-    extract = PythonOperator(
-        task_id="extract_invoices",
-        python_callable=extract_from_source,
-    )
-    transform = PythonOperator(
-        task_id="run_spark_job",
-        python_callable=trigger_spark_cluster,
-    )
-    load = PythonOperator(
-        task_id="load_to_sql",
-        python_callable=load_to_azure_sql,
-    )
-
-    extract >> transform >> load</pre></div>
-
-<h3 style="font-family:'Space Grotesk',sans-serif;margin:2rem 0 1rem;font-size:1.1rem">🗄️ Advanced SQL — Cash flow risk detection</h3>
-<div class="code-block"><pre>WITH monthly_flow AS (
-    SELECT
-        company_id,
-        DATE_TRUNC('month', transaction_date) AS month,
-        SUM(amount) AS net_flow
-    FROM transactions
-    GROUP BY company_id, DATE_TRUNC('month', transaction_date)
-),
-trend AS (
-    SELECT
-        company_id,
-        month,
-        net_flow,
-        AVG(net_flow) OVER (
-            PARTITION BY company_id
-            ORDER BY month
-            ROWS BETWEEN 5 PRECEDING AND CURRENT ROW
-        ) AS rolling_avg,
-        LAG(net_flow, 1) OVER (
-            PARTITION BY company_id ORDER BY month
-        ) AS prev_month
-    FROM monthly_flow
-)
-SELECT
-    company_id,
-    month,
-    net_flow,
-    rolling_avg,
-    ROUND(((net_flow - prev_month) / prev_month) * 100, 2) AS pct_change
-FROM trend
-WHERE net_flow < rolling_avg * 0.7
-ORDER BY month DESC;</pre></div>
-`;
-}
-</script> </body>
-</html>. 
+<h3 style="font-fa  </body>
+</html>
