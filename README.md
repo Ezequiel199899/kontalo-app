@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kontalo</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;600&display=swap');
 :root{--bg:#0A0F1A;--surface:#111827;--border:#1E2D3D;--accent:#00E5A0;--accentDim:#0D2A1F;--text:#E8EDF5;--muted:#8899AA;--faint:#4A5A6A;--danger:#FF6B6B;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
@@ -17,6 +17,8 @@ input,button{font-family:'Inter',sans-serif;}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
 .input{background:#0A0F1A;border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.9rem;padding:.75rem 1rem;width:100%;outline:none;margin-bottom:1rem;}
 .btn{background:var(--accent);color:var(--bg);border:none;border-radius:7px;padding:.75rem 1.5rem;font-weight:600;cursor:pointer;width:100%;}
+.tab-btn{background:transparent;color:var(--muted);border:none;border-radius:6px;padding:.5rem 1rem;font-size:.85rem;cursor:pointer;font-weight:500;}
+.tab-btn.active{background:var(--accentDim);color:var(--accent);font-weight:600;}
 .logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.8rem;}
 .logo span{color:var(--accent);}
 .ticker-wrap{overflow:hidden;background:var(--surface);border-bottom:1px solid var(--border);padding:.5rem 0;}
@@ -24,11 +26,13 @@ input,button{font-family:'Inter',sans-serif;}
 .ticker-item{display:inline-flex;gap:.5rem;padding:0 2rem;font-size:.8rem;border-right:1px solid var(--border);}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0;}
 .pipeline-step{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-left:2px solid var(--accent);margin-bottom:.5rem;background:var(--accentDim);border-radius:0 8px 8px 0;}
-@media(max-width:768px){.grid{grid-template-columns:1fr;}}
+.code-block{background:#0A0F1A;border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin-bottom:1.5rem;}
+.code-block pre{font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#A5F3D1;white-space:pre;}
+.tech-badge{display:inline-flex;align-items:center;gap:.4rem;background:var(--accentDim);color:var(--accent);padding:.3rem .7rem;border-radius:6px;font-size:.75rem;font-weight:600;margin-right:.5rem;margin-bottom:.5rem;}
+@media(max-width:768px){.grid{grid-template-columns:1fr;}.code-block pre{font-size:.68rem;}}
 </style>
 </head>
-<body>
-<div id="login" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
+<body>. <div id="login" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
 <div style="width:100%;max-width:380px;">
 <div style="text-align:center;margin-bottom:2rem;"><span class="logo"><span>kon</span>talo</span></div>
 <div class="card">
@@ -38,6 +42,7 @@ input,button{font-family:'Inter',sans-serif;}
 </div>
 </div>
 </div>
+
 <div id="app" class="hidden">
 <div class="ticker-wrap"><div class="ticker-track" id="ticker"><span class="ticker-item"><span class="spinner"></span> Loading…</span></div></div>
 <div style="padding:2rem;max-width:1000px;margin:0 auto;">
@@ -45,12 +50,16 @@ input,button{font-family:'Inter',sans-serif;}
 <span class="logo" style="font-size:1.3rem"><span>kon</span>talo</span>
 <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--danger);padding:.5rem 1rem;border-radius:6px;cursor:pointer;">Sign out</button>
 </div>
+<div style="display:flex;gap:.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:.5rem;">
+<button class="tab-btn active" id="tabDash" onclick="showTab('dashboard')">Dashboard</button>
+<button class="tab-btn" id="tabPipe" onclick="showTab('pipeline')">Data Engineering</button>
+</div>
 <div id="content"></div>
 </div>
-</div>. <script>
+</div> <script>
 const API_BASE="https://contabilidad-de-datos.onrender.com";
 const seed=[210,195,230,215,240,225];
-let fx=null,com=null;
+let fx=null,com=null,activeTab="dashboard";
 
 function login(){
 if(!document.getElementById("email").value){alert("Enter email");return;}
@@ -61,6 +70,13 @@ loadAll();
 function logout(){
 document.getElementById("app").classList.add("hidden");
 document.getElementById("login").classList.remove("hidden");
+}
+function showTab(tab){
+activeTab=tab;
+document.getElementById("tabDash").classList.toggle("active",tab==="dashboard");
+document.getElementById("tabPipe").classList.toggle("active",tab==="pipeline");
+if(tab==="dashboard")renderDashboard();
+else renderPipeline();
 }
 
 function fmt(n){return n>=1e6?"$"+(n/1e6).toFixed(1)+"M":n>=1000?"$"+(n/1000).toFixed(0)+"K":"$"+n;}
@@ -101,14 +117,13 @@ t.innerHTML=all.map(i=>`<span class="ticker-item"><span style="color:var(--faint
 }
 
 async function loadAll(){
+try{fx=await fetchFX();com=await fetchCom();renderTicker();}catch(e){renderTicker();}
+renderDashboard();
+}
+</script> <script>
+async function renderDashboard(){
 const c=document.getElementById("content");
 c.innerHTML='<div class="card"><span class="spinner"></span> Loading dashboard…</div>';
-try{
-fx=await fetchFX();
-com=await fetchCom();
-renderTicker();
-}catch(e){renderTicker();}
-
 let forecastHTML='<span class="spinner"></span>';
 try{
 const f=await fetchForecast();
@@ -121,20 +136,123 @@ forecastHTML=`
 }catch(e){
 forecastHTML=`<div class="card" style="color:var(--danger)">⚠ ${e.message} — Render cold-starting, reload in 30s.</div>`;
 }
-
 c.innerHTML=`
 <h2 style="font-family:'Space Grotesk',sans-serif;margin-bottom:.3rem">Dashboard</h2>
 <p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem">El Clavo Hardware · Cash flow projection</p>
 ${forecastHTML}
-<h2 style="font-family:'Space Grotesk',sans-serif;margin:2rem 0 1rem">Data Pipeline</h2>
-<p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem">How your data flows through Kontalo's architecture</p>
-<div class="pipeline-step"><span>📥</span> <div><b>Ingest</b> — Invoice & transaction data collected</div></div>
-<div class="pipeline-step"><span>☁️</span> <div><b>Azure Data Lake</b> — Raw data stored for processing</div></div>
-<div class="pipeline-step"><span>⚙️</span> <div><b>Flask ML Service</b> — Statistical forecasting model runs</div></div>
-<div class="pipeline-step"><span>📊</span> <div><b>API Layer</b> — Spring Boot exposes clean results</div></div>
-<div class="pipeline-step"><span>🟢</span> <div><b>Dashboard</b> — You see live projections, right here</div></div>
 `;
 }
-</script>
-</body>
-</html>.     
+</script> <script>
+function renderPipeline(){
+const c=document.getElementById("content");
+c.innerHTML=`
+<h2 style="font-family:'Space Grotesk',sans-serif;margin-bottom:.3rem">Data Engineering</h2>
+<p style="color:var(--muted);font-size:.85rem;margin-bottom:1.25rem">How Kontalo processes financial data at scale</p>
+
+<div style="margin-bottom:1.5rem;">
+<span class="tech-badge">⚡ Apache Spark</span>
+<span class="tech-badge">🔄 Apache Airflow</span>
+<span class="tech-badge">☁️ Azure</span>
+<span class="tech-badge">🗄️ Advanced SQL</span>
+</div>
+
+<div class="pipeline-step"><span>📥</span> <div><b>Ingest</b> — Invoice & transaction data collected from clients</div></div>
+<div class="pipeline-step"><span>☁️</span> <div><b>Azure Data Lake Storage</b> — Raw data lands here before processing</div></div>
+<div class="pipeline-step"><span>⚡</span> <div><b>Apache Spark</b> — Distributed processing of large transaction volumes</div></div>
+<div class="pipeline-step"><span>🔄</span> <div><b>Apache Airflow</b> — Orchestrates daily ETL jobs automatically</div></div>
+<div class="pipeline-step"><span>🗄️</span> <div><b>Azure SQL Database</b> — Cleaned data stored for queries</div></div>
+<div class="pipeline-step"><span>🟢</span> <div><b>Dashboard</b> — You see live projections, right here</div></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;margin:2rem 0 1rem;font-size:1.1rem">⚡ PySpark — Processing transactions at scale</h3>
+<div class="code-block"><pre>from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, sum as _sum, avg
+
+spark = SparkSession.builder \\
+    .appName("KontaloTransactions") \\
+    .getOrCreate()
+
+df = spark.read.format("delta") \\
+    .load("/mnt/datalake/transactions/")
+
+monthly_cashflow = df.groupBy("company_id", "month") \\
+    .agg(
+        _sum("amount").alias("total_inflow"),
+        avg("amount").alias("avg_transaction")
+    ) \\
+    .orderBy("month")
+
+monthly_cashflow.write.format("delta") \\
+    .mode("overwrite") \\
+    .save("/mnt/datalake/processed/cashflow/")</pre></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;margin:2rem 0 1rem;font-size:1.1rem">🔄 Airflow — Daily ETL orchestration</h3>
+<div class="code-block"><pre>from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
+
+default_args = {
+    "owner": "kontalo",
+    "retries": 2,
+    "retry_delay": timedelta(minutes=5),
+}
+
+with DAG(
+    "kontalo_daily_etl",
+    default_args=default_args,
+    schedule_interval="0 3 * * *",
+    start_date=datetime(2026, 1, 1),
+    catchup=False,
+) as dag:
+
+    extract = PythonOperator(
+        task_id="extract_invoices",
+        python_callable=extract_from_source,
+    )
+    transform = PythonOperator(
+        task_id="run_spark_job",
+        python_callable=trigger_spark_cluster,
+    )
+    load = PythonOperator(
+        task_id="load_to_sql",
+        python_callable=load_to_azure_sql,
+    )
+
+    extract >> transform >> load</pre></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;margin:2rem 0 1rem;font-size:1.1rem">🗄️ Advanced SQL — Cash flow risk detection</h3>
+<div class="code-block"><pre>WITH monthly_flow AS (
+    SELECT
+        company_id,
+        DATE_TRUNC('month', transaction_date) AS month,
+        SUM(amount) AS net_flow
+    FROM transactions
+    GROUP BY company_id, DATE_TRUNC('month', transaction_date)
+),
+trend AS (
+    SELECT
+        company_id,
+        month,
+        net_flow,
+        AVG(net_flow) OVER (
+            PARTITION BY company_id
+            ORDER BY month
+            ROWS BETWEEN 5 PRECEDING AND CURRENT ROW
+        ) AS rolling_avg,
+        LAG(net_flow, 1) OVER (
+            PARTITION BY company_id ORDER BY month
+        ) AS prev_month
+    FROM monthly_flow
+)
+SELECT
+    company_id,
+    month,
+    net_flow,
+    rolling_avg,
+    ROUND(((net_flow - prev_month) / prev_month) * 100, 2) AS pct_change
+FROM trend
+WHERE net_flow < rolling_avg * 0.7
+ORDER BY month DESC;</pre></div>
+`;
+}
+</script></body>
+</html>  
