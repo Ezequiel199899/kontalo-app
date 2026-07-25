@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -86,14 +86,49 @@ input,button,select{font-family:'Inter',sans-serif;}
 <div class="ticker-wrap"><div class="ticker-track" id="tickerTrack"><span class="ticker-item"><span class="spinner"></span> Loading live market rates…</span></div></div>
 <main style="flex:1;padding:2rem 2.25rem;overflow-y:auto;" id="mainContent"></main>
 </div>
-</div><script>
+</div>.  <script>
 const API_BASE="https://contabilidad-de-datos.onrender.com";
 const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const COMPANIES=[{name:"El Clavo Hardware",sector:"Retail",plan:"Growth",seed:[210,195,230,215,240,225],currency:"ARS"},{name:"Soto Import SA",sector:"Import/Export",plan:"Scale",seed:[450,480,510,490,530,505],currency:"USD"},{name:"Dubois Consulting",sector:"Services",plan:"Starter",seed:[80,95,88,102,91,110],currency:"BRL"}];
 const INVOICES=[{id:"INV-001",client:"BuildCo Ltd",amount:12400,date:"Jun 10",status:"paid"},{id:"INV-002",client:"Metro Supplies",amount:8750,date:"Jun 08",status:"pending"},{id:"INV-003",client:"Alpha Group",amount:31200,date:"Jun 05",status:"paid"},{id:"INV-004",client:"City Works",amount:5600,date:"Jun 01",status:"overdue"},{id:"INV-005",client:"TechParts SA",amount:19800,date:"May 28",status:"paid"},{id:"INV-006",client:"Harbor Imports",amount:44100,date:"May 25",status:"pending"}];
 const ALERTS=[{type:"danger",title:"Cash flow risk detected",desc:"Projected cash drops below threshold in May.",time:"2h ago"},{type:"warn",title:"Invoice overdue — City Works",desc:"INV-004 for $5,600 is 14 days overdue.",time:"1d ago"},{type:"ok",title:"Monthly target reached",desc:"June inflow exceeded forecast by 12.4%.",time:"2d ago"},{type:"ok",title:"FX rate opportunity",desc:"Favorable USD spread — optimal for import orders.",time:"3d ago"}];
 const NAV=[{id:"dashboard",icon:"⬡",label:"Dashboard"},{id:"cashflow",icon:"◎",label:"Cash Flow"},{id:"markets",icon:"◇",label:"FX & Markets"},{id:"invoices",icon:"◈",label:"Invoices"},{id:"alerts",icon:"△",label:"Alerts",badge:2}];
-let currentUser=null,currentCompany=0,fxRates=null,commodities=null,currentPage="dashboard";
+
+const FX_STATIC=[
+{code:"EUR",flag:"🇪🇺",name:"Euro",rate:"0.8790 EUR"},
+{code:"ARS",flag:"🇦🇷",name:"Argentine Peso",rate:"1525 ARS (blue)"},
+{code:"BRL",flag:"🇧🇷",name:"Brazilian Real",rate:"5.0827 BRL"},
+{code:"MXN",flag:"🇲🇽",name:"Mexican Peso",rate:"17.48 MXN"},
+{code:"COP",flag:"🇨🇴",name:"Colombian Peso",rate:"4180 COP"},
+{code:"CLP",flag:"🇨🇱",name:"Chilean Peso",rate:"945 CLP"},
+{code:"GBP",flag:"🇬🇧",name:"British Pound",rate:"0.7505 GBP"},
+{code:"CNY",flag:"🇨🇳",name:"Chinese Yuan",rate:"6.7722 CNY"},
+];
+const COM_STATIC=[
+{name:"Gold",unit:"troy oz",icon:"🥇",val:"$4,068"},
+{name:"Silver",unit:"troy oz",icon:"🥈",val:"$58.88"},
+{name:"Crude Oil",unit:"barrel",icon:"🛢️",val:"$73.40"},
+{name:"Soybeans",unit:"bushel",icon:"🌾",val:"$10.82"},
+{name:"Wheat",unit:"bushel",icon:"🌿",val:"$5.64"},
+{name:"Corn",unit:"bushel",icon:"🌽",val:"$4.38"},
+];
+const TICKER_ITEMS=[
+{label:"EUR/USD",val:"1.1376",up:true},
+{label:"USD/ARS",val:"1525 (blue)",up:false},
+{label:"USD/BRL",val:"5.0827",up:false},
+{label:"USD/MXN",val:"17.48",up:false},
+{label:"GBP/USD",val:"1.3325",up:true},
+{label:"USD/CNY",val:"6.7722",up:false},
+{label:"USD/CLP",val:"945",up:false},
+{label:"GOLD oz",val:"$4,068",up:true},
+{label:"SILVER oz",val:"$58.88",up:true},
+{label:"CRUDE OIL",val:"$73.40",up:true},
+{label:"SOYBEANS",val:"$10.82",up:false},
+{label:"WHEAT",val:"$5.64",up:true},
+{label:"CORN",val:"$4.38",up:false},
+];
+
+let currentUser=null,currentCompany=0,currentPage="dashboard";
 function fmt(n){if(n>=1e6)return"$"+(n/1e6).toFixed(1)+"M";if(n>=1000)return"$"+(n/1000).toFixed(0)+"K";return"$"+n;}
 function handleLogin(){
 const email=document.getElementById("loginEmail").value;
@@ -102,55 +137,23 @@ const err=document.getElementById("loginError");
 if(!email||!pass){err.textContent="Please fill in all fields.";err.style.display="block";return;}
 err.style.display="none";
 const btn=document.getElementById("loginBtn");
-btn.innerHTML='<span class="spinner"></span> Signing in...';
-btn.disabled=true;
+btn.innerHTML='<span class="spinner"></span> Signing in...';btn.disabled=true;
 setTimeout(function(){
 currentUser={name:"Ezequiel Prilusky",email:email};
 document.getElementById("userName").textContent=currentUser.name;
 document.getElementById("loginScreen").classList.add("hidden");
 document.getElementById("appShell").classList.remove("hidden");
 document.getElementById("appShell").style.display="flex";
-renderNav();
-loadMarkets();
-renderPage("dashboard");
+renderTicker();renderNav();renderPage("dashboard");
 },1100);
 }
 function handleLogout(){currentUser=null;document.getElementById("appShell").classList.add("hidden");document.getElementById("loginScreen").classList.remove("hidden");document.getElementById("loginEmail").value="";document.getElementById("loginPass").value="";document.getElementById("loginBtn").innerHTML="Sign in";document.getElementById("loginBtn").disabled=false;}
 function changeCompany(){currentCompany=parseInt(document.getElementById("companySelect").value);renderPage(currentPage);}
 function renderNav(){const nav=document.getElementById("navMenu");nav.innerHTML=NAV.map(function(n){return'<div class="nav-item '+(currentPage===n.id?'active':'')+'" onclick="renderPage(\''+n.id+'\')"><span>'+n.icon+'</span><span style="flex:1">'+n.label+'</span>'+(n.badge?'<span class="badge badge-red">'+n.badge+'</span>':'')+'</div>';}).join("");document.getElementById("userPlan").textContent=COMPANIES[currentCompany].plan+" plan";}
+function renderTicker(){const track=document.getElementById("tickerTrack");const all=TICKER_ITEMS.concat(TICKER_ITEMS);track.innerHTML=all.map(function(i){return'<span class="ticker-item"><span style="color:var(--faint)">'+i.label+'</span><span style="color:'+(i.up?'var(--accent)':'var(--danger)')+';font-weight:600">'+i.val+'</span><span style="color:'+(i.up?'var(--accent)':'var(--danger)')+';font-size:.65rem">'+(i.up?'▲':'▼')+'</span></span>';}).join("");}
 async function fetchForecast(values){const res=await fetch(API_BASE+"/forecast",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({values:values})});if(!res.ok)throw new Error("API "+res.status);return res.json();}
-async function fetchFXRates(){const res=await fetch("https://api.frankfurter.dev/v1/latest?from=USD&to=EUR,ARS,BRL,MXN,COP,CLP,GBP,CNY");if(!res.ok)throw new Error("FX error");return(await res.json()).rates;}
-async function fetchCommodities(){try{const results=await Promise.allSettled([fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json").then(function(r){return r.json();}),fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xag.json").then(function(r){return r.json();})]);const g=results[0];const s=results[1];return{goldUSD:g.status==="fulfilled"?+(1/g.value.xau.usd).toFixed(2):null,silverUSD:s.status==="fulfilled"?+(1/s.value.xag.usd).toFixed(2):null};}catch(e){return{goldUSD:null,silverUSD:null};}}
-async function loadMarkets(){try{fxRates=await fetchFXRates();}catch(e){fxRates=null;}try{commodities=await fetchCommodities();}catch(e){commodities=null;}renderTicker();if(currentPage==="markets"||currentPage==="dashboard")renderPage(currentPage);}
-function renderTicker(){const track=document.getElementById("tickerTrack");if(!fxRates){track.innerHTML='<span class="ticker-item" style="color:var(--danger)">Live rates unavailable</span>';return;}const items=[{label:"EUR/USD",val:(1/fxRates.EUR).toFixed(4),up:true},{label:"USD/ARS",val:fxRates.ARS.toFixed(2),up:false},{label:"USD/BRL",val:fxRates.BRL.toFixed(4),up:false},{label:"USD/MXN",val:fxRates.MXN.toFixed(4),up:false},{label:"GBP/USD",val:(1/fxRates.GBP).toFixed(4),up:true},{label:"USD/CNY",val:fxRates.CNY.toFixed(4),up:false},{label:"CRUDE OIL",val:"$73.40",up:true},{label:"SOYBEANS",val:"$10.82",up:false},{label:"WHEAT",val:"$5.64",up:true},{label:"CORN",val:"$4.38",up:false}];const all=items.concat(items);track.innerHTML=all.map(function(i){return'<span class="ticker-item"><span style="color:var(--faint)">'+i.label+'</span><span style="color:'+(i.up?'var(--accent)':'var(--danger)')+';font-weight:600">'+i.val+'</span><span style="color:'+(i.up?'var(--accent)':'var(--danger)')+';font-size:.65rem">'+(i.up?'▲':'▼')+'</span></span>';}).join("");}
 function renderPage(page){currentPage=page;renderNav();const company=COMPANIES[currentCompany];const main=document.getElementById("mainContent");if(page==="dashboard")renderDashboard(main,company);else if(page==="cashflow")renderCashflow(main,company);else if(page==="markets")renderMarkets(main);else if(page==="invoices")renderInvoices(main);else if(page==="alerts")renderAlerts(main);}
 async function renderDashboard(main,company){
 const latest=company.seed[5]*1000,prev=company.seed[4]*1000;
 const delta=(((latest-prev)/prev)*100).toFixed(1);
-const fxRate=company.currency!=="USD"&&fxRates?fxRates[company.currency]:null;
-main.innerHTML='<div class="fade-in"><h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;font-weight:700;">Dashboard</h1><p style="color:var(--muted);font-size:.85rem;margin:.2rem 0 1.75rem;">'+company.name+' · '+company.sector+(fxRate?' <span style="color:var(--accent)">1 USD = '+fxRate.toFixed(2)+' '+company.currency+'</span>':'')+'</p><div class="kpi-grid"><div class="card" style="padding:1.25rem 1.4rem"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">Current cash flow</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;font-weight:700">'+fmt(latest)+'</div><div style="font-size:.78rem;color:'+(+delta>0?'var(--accent)':'var(--danger)')+'">'+( +delta>0?'▲':'▼')+' '+delta+'% vs last month</div></div><div class="card" style="padding:1.25rem 1.4rem" id="kpiProjection"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">AI projection</div><div><span class="spinner"></span></div></div><div class="card" style="padding:1.25rem 1.4rem" id="kpiAvg"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">Avg monthly</div><div><span class="spinner"></span></div></div><div class="card" style="padding:1.25rem 1.4rem"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">Active alerts</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;font-weight:700">2</div><div style="font-size:.78rem;color:var(--danger)">▼ 1 critical</div></div></div><div id="apiStatus"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem"><div class="card" style="padding:1.25rem"><div style="font-weight:600;margin-bottom:1rem">Recent invoices</div>'+INVOICES.slice(0,4).map(function(inv){return'<div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border)"><div><div style="font-size:.85rem">'+inv.client+'</div><div style="font-size:.72rem;color:var(--faint)">'+inv.id+' · '+inv.date+'</div></div><div style="text-align:right"><div style="font-size:.88rem;font-weight:600">$'+inv.amount.toLocaleString()+'</div><span class="badge badge-'+(inv.status==='paid'?'green':inv.status==='overdue'?'red':'yellow')+'">'+inv.status+'</span></div></div>';}).join('')+'</div><div class="card" style="padding:1.25rem"><div style="font-weight:600;margin-bottom:1rem">Active alerts</div>'+ALERTS.map(function(a){return'<div class="alert-item alert-'+a.type+'"><div style="font-size:.82rem;font-weight:600;margin-bottom:.2rem">'+a.title+'</div><div style="font-size:.75rem;color:var(--muted)">'+a.desc+'</div><div style="font-size:.68rem;color:var(--faint);margin-top:.3rem">'+a.time+'</div></div>';}).join('')+'</div></div></div>';
-try{
-const forecast=await fetchForecast(company.seed);
-document.getElementById("kpiProjection").innerHTML='<div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">AI projection</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;font-weight:700;color:var(--accent)">'+fmt(Math.round(forecast.proyeccion*1000))+'</div><div style="font-size:.78rem;color:var(--accent)">▲ Trend '+forecast.tendencia.toFixed(1)+'K/mo</div>';
-document.getElementById("kpiAvg").innerHTML='<div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">Avg monthly</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;font-weight:700">'+fmt(Math.round(forecast.promedio*1000))+'</div><div style="font-size:.78rem;color:var(--accent)">▲ From live API</div>';
-}catch(e){
-document.getElementById("apiStatus").innerHTML='<div class="card" style="padding:.9rem;margin-bottom:1rem;color:var(--danger);font-size:.85rem;border-color:#FF6B6B44">⚠ '+e.message+' — Render cold-starting. Reload in 30s.</div>';
-}
-}
-async function renderCashflow(main,company){
-main.innerHTML='<div class="fade-in"><h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;font-weight:700;">Cash Flow</h1><p style="color:var(--muted);font-size:.85rem;margin:.2rem 0 1.5rem;">Live projections from your Flask microservice</p><div id="cfContent"><span class="spinner"></span> Fetching...</div></div>';
-try{
-const forecast=await fetchForecast(company.seed);
-document.getElementById("cfContent").innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem"><div class="card" style="padding:1rem 1.25rem"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.4rem">6-month average</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.6rem;font-weight:700;color:var(--accent)">'+fmt(Math.round(forecast.promedio*1000))+'</div></div><div class="card" style="padding:1rem 1.25rem"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.4rem">Monthly trend</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.6rem;font-weight:700;color:var(--accent)">'+(forecast.tendencia>0?'+':'')+forecast.tendencia.toFixed(1)+'K</div></div><div class="card" style="padding:1rem 1.25rem"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.4rem">Next projection</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.6rem;font-weight:700;color:var(--accent)">'+fmt(Math.round(forecast.proyeccion*1000))+'</div></div></div><div class="card" style="padding:1.25rem"><div style="font-weight:600;margin-bottom:1rem">Monthly breakdown</div><table style="width:100%;border-collapse:collapse;font-size:.85rem"><thead><tr style="color:var(--faint);font-size:.72rem;text-transform:uppercase"><th style="text-align:left;padding:.5rem .75rem">Month</th><th style="text-align:left;padding:.5rem .75rem">Actual</th><th style="text-align:left;padding:.5rem .75rem">Projected</th><th style="text-align:left;padding:.5rem .75rem">Status</th></tr></thead><tbody>'+MONTHS.slice(0,6).map(function(m,i){return'<tr style="border-top:1px solid var(--border)"><td style="padding:.65rem .75rem;font-weight:500">'+m+'</td><td style="padding:.65rem .75rem">'+fmt(company.seed[i]*1000)+'</td><td style="padding:.65rem .75rem;color:var(--muted)">'+fmt(Math.round((company.seed[5]+forecast.tendencia*(i-5))*1000))+'</td><td style="padding:.65rem .75rem"><span class="badge badge-green">On track</span></td></tr>';}).join('')+'</tbody></table></div>';
-}catch(e){document.getElementById("cfContent").innerHTML='<div style="color:var(--danger)">⚠ '+e.message+'</div>';}
-}
-function renderMarkets(main){
-const currencies=[{code:"EUR",flag:"🇪🇺",name:"Euro",rate:fxRates&&fxRates.EUR?fxRates.EUR.toFixed(4)+" EUR":"—"},{code:"ARS",flag:"🇦🇷",name:"Argentine Peso",rate:fxRates&&fxRates.ARS?fxRates.ARS.toFixed(2)+" ARS":"—"},{code:"BRL",flag:"🇧🇷",name:"Brazilian Real",rate:fxRates&&fxRates.BRL?fxRates.BRL.toFixed(4)+" BRL":"—"},{code:"MXN",flag:"🇲🇽",name:"Mexican Peso",rate:fxRates&&fxRates.MXN?fxRates.MXN.toFixed(4)+" MXN":"—"},{code:"COP",flag:"🇨🇴",name:"Colombian Peso",rate:fxRates&&fxRates.COP?fxRates.COP.toFixed(0)+" COP":"—"},{code:"CLP",flag:"🇨🇱",name:"Chilean Peso",rate:fxRates&&fxRates.CLP?fxRates.CLP.toFixed(0)+" CLP":"—"},{code:"GBP",flag:"🇬🇧",name:"British Pound",rate:fxRates&&fxRates.GBP?fxRates.GBP.toFixed(4)+" GBP":"—"},{code:"CNY",flag:"🇨🇳",name:"Chinese Yuan",rate:fxRates&&fxRates.CNY?fxRates.CNY.toFixed(4)+" CNY":"—"}];
-const comCards=[{name:"Gold",unit:"troy oz",icon:"🥇",val:commodities&&commodities.goldUSD?"$"+commodities.goldUSD.toLocaleString():"$3,342"},{name:"Silver",unit:"troy oz",icon:"🥈",val:commodities&&commodities.silverUSD?"$"+commodities.silverUSD.toFixed(2):"$32.40"},{name:"Crude Oil",unit:"barrel",icon:"🛢️",val:"$73.40"},{name:"Soybeans",unit:"bushel",icon:"🌾",val:"$10.82"},{name:"Wheat",unit:"bushel",icon:"🌿",val:"$5.64"},{name:"Corn",unit:"bushel",icon:"🌽",val:"$4.38"}];
-main.innerHTML='<div class="fade-in"><h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;font-weight:700;">FX & Markets</h1><p style="color:var(--muted);font-size:.85rem;margin:.2rem 0 1.75rem;">Live rates · Frankfurter ECB</p><div style="font-weight:600;margin-bottom:1rem">Currency Pairs</div><div class="fx-grid">'+currencies.map(function(c){return'<div class="fx-card"><div style="display:flex;justify-content:space-between;margin-bottom:.5rem"><span style="font-size:1.4rem">'+c.flag+'</span><span class="badge badge-green">'+c.code+'</span></div><div style="font-size:.75rem;color:var(--faint);margin-bottom:.2rem">'+c.name+'</div><div style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:1.15rem">'+c.rate+'</div></div>';}).join('')+'</div><div style="font-weight:600;margin-bottom:1rem">Commodities</div><div class="com-grid">'+comCards.map(function(c){return'<div class="fx-card"><div style="font-size:1.5rem;margin-bottom:.5rem">'+c.icon+'</div><div style="font-size:.75rem;color:var(--faint);margin-bottom:.2rem">'+c.name+' / '+c.unit+'</div><div style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:1.3rem;color:var(--accent)">'+c.val+'</div></div>';}).join('')+'</div></div>';
-}
-function renderInvoices(main){main.innerHTML='<div class="fade-in"><h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;font-weight:700;">Invoices</h1><div class="card" style="margin-top:1.5rem;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:.875rem"><thead style="background:var(--bg)"><tr style="color:var(--faint);font-size:.72rem;text-transform:uppercase"><th style="text-align:left;padding:.75rem 1.25rem">Invoice</th><th style="text-align:left;padding:.75rem 1.25rem">Client</th><th style="text-align:left;padding:.75rem 1.25rem">Amount</th><th style="text-align:left;padding:.75rem 1.25rem">Date</th><th style="text-align:left;padding:.75rem 1.25rem">Status</th></tr></thead><tbody>'+INVOICES.map(function(inv){return'<tr style="border-top:1px solid var(--border)"><td style="padding:.9rem 1.25rem;font-weight:600;color:var(--accent)">'+inv.id+'</td><td style="padding:.9rem 1.25rem">'+inv.client+'</td><td style="padding:.9rem 1.25rem;font-weight:600">$'+inv.amount.toLocaleString()+'</td><td style="padding:.9rem 1.25rem;color:var(--muted)">'+inv.date+'</td><td style="padding:.9rem 1.25rem"><span class="badge badge-'+(inv.status==='paid'?'green':inv.status==='overdue'?'red':'yellow')+'">'+inv.status+'</span></td></tr>';}).join('')+'</tbody></table></div></div>';}
-function renderAlerts(main){main.innerHTML='<div class="fade-in"><h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;font-weight:700;">Alerts</h1><p style="color:var(--muted);font-size:.85rem;margin:.2rem 0 1.75rem;">Kontalo watches your numbers 24/7</p><div style="max-width:680px">'+ALERTS.map(function(a){return'<div class="alert-item alert-'+a.type+' card" style="margin-bottom:.85rem;padding:1.1rem 1.25rem"><div style="display:flex;justify-content:space-between"><div style="font-size:.9rem;font-weight:600;margin-bottom:.3rem">'+a.title+'</div><span style="font-size:.7rem;color:var(--faint)">'+a.time+'</span></div><div style="font-size:.83rem;color:var(--muted)">'+a.desc+'</div></div>';}).join('')+'</div></div>';}
-</script>
-</body>
-</html>
+main.innerHTML='<div class="fade-in"><h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.5rem;font-weight:700;">Dashboard</h1><p style="color:var(--muted);font-size:.85rem;margin:.2rem 0 1.75rem;">'+company.name+' · '+company.sector+'</p><div class="kpi-grid"><div class="card" style="padding:1.25rem 1.4rem"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">Current cash flow</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;font-weight:700">'+fmt(latest)+'</div><div style="font-size:.78rem;color:'+(+delta>0?'var(--accent)':'var(--danger)')+'">'+( +delta>0?'▲':'▼')+' '+delta+'% vs last month</div></div><div class="card" style="padding:1.25rem 1.4rem" id="kpiProjection"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">AI projection</div><div><span class="spinner"></span></div></div><div class="card" style="padding:1.25rem 1.4rem" id="kpiAvg"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">Avg monthly</div><div><span class="spinner"></span></div></div><div class="card" style="padding:1.25rem 1.4rem"><div style="font-size:.7rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem">Active alerts</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.75rem;font-weight:700">2</div><div style="font-size:.78rem;color:var(--danger)">▼ 1 critical</div></div></div><div id="apiStatus"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem"><div class="card" style="padding:1.25rem"><div style="font-weight:600;margin-bottom:1rem">Recent invoices</div>'+INVOICES.slice(0,4).map(function(inv){return'<div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border)"><div><div style="font-size:.85rem">'+inv.client+'</div><div style="font-size:.72rem;color:var(--faint)">'+inv.id+' · '+inv.date+'</div></div><div style="text-align:right"><div style="font-size:.88rem;font-weight:600">$'+inv.amount.toLocaleString()+'</div><span class="badge badge-'+(inv.status==='paid'?'green':inv.status==='overdue'?'red':'yellow')+'">'+inv.status+'</span></div></div>';}).join('')+'</div><div class="card" style="padding:1.25rem"><div style="font-weight:600;margin-bottom:1rem">Active alerts</div>'+ALERTS.map(function(a){return'<div class="alert-item alert-'+a.type+'"><div style="font-size:.82rem;font-weight:600;margin-bottom:.2rem">'
