@@ -276,4 +276,4 @@ main.innerHTML='<div class="fade-in">'+
 function renderAlerts(main){
 main.innerHTML='<div class="fade-in">'+
 '<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:1.25rem;">Alerts</h1>'+
-'<div style="max-width:680px">'+ALERTS.map(function(a){return'<div class="alert-item alert-'+a.type+' card" style="margin-bottom:.85rem;padding:1.1rem 1.25rem"><div style="display:flex;justify-content:space-between"><div style="font-size:.9rem;font-weight:600;margin-bottom:.3rem">'+a.title+'</div><span style="font-size:.7rem;color:var(--faint)">'+a.time+'</span></div><di
+'<div style="max-width:680px">'+ALERTS.map(function(a){return'<div class="alert-item alert-'+a.type+' card" style="margin-bottom:.85rem;padding:1.1rem 1.25rem"><div style="display:flex;justify-content:space-between"><div style="font-size:.9rem;font-weight:600;margin-bottom:.3rem">'+a.title+'</div><span style="font-size:.7rem;color:var(--faint)">'+a.time+'</span></div><di 
