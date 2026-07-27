@@ -1,4 +1,4 @@
-<<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -47,33 +47,35 @@ input,button,select{font-family:'Inter',sans-serif;}
 .com-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;margin-bottom:2rem;}
 .fx-table-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 0.7fr;align-items:center;padding:.65rem .85rem;border-bottom:1px solid var(--border);}
 .fx-table-row:last-child{border-bottom:none;}
-.inv-row{display:flex;justify-content:space-between;align-items:center;padding:.6rem 1.25rem;border-bottom:1px solid var(--border);}
-.inv-row:last-child{border-bottom:none;}
+.tab-btn{padding:.5rem 1.1rem;border-radius:6px;font-size:.85rem;cursor:pointer;color:var(--muted);background:transparent;border:none;font-weight:500;}
+.tab-btn.active{background:var(--accentDim);color:var(--accent);font-weight:600;}
 @media(max-width:768px){
 .sidebar{display:none !important;}
 .kpi-grid{grid-template-columns:1fr 1fr !important;}
 .com-mini-grid{grid-template-columns:1fr 1fr !important;}
 .bottom-grid{grid-template-columns:1fr !important;}
 .fx-grid,.com-grid{grid-template-columns:1fr 1fr !important;}
-.fx-table-row{grid-template-columns:1.2fr 1fr 1fr 0.6fr;}
 }
 </style>
 </head>
 <body>
 <div id="loginScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
-<div style="width:100%;max-width:400px;" class="fade-in">
+<div style="width:100%;max-width:420px;" class="fade-in">
 <div style="text-align:center;margin-bottom:2.5rem;">
-<span class="logo" style="font-size:1.9rem;"><span>kon</span>talo</span>
-<p style="color:var(--muted);margin-top:.6rem;font-size:.9rem;">Tu plataforma financiera inteligente</p>
+<span class="logo" style="font-size:2rem;"><span>kon</span>talo</span>
+<p style="color:var(--muted);margin-top:.6rem;font-size:.95rem;">Tu plataforma financiera inteligente</p>
 </div>
-<div class="card" style="padding:2rem;">
-<button class="btn btn-primary" style="width:100%;justify-content:center;font-size:1.1rem;padding:1rem;" onclick="handleLogin()" id="loginBtn">Ingresar a Kontalo</button>
-<p style="text-align:center;margin-top:1rem;font-size:.75rem;color:var(--faint);">Acceso libre — sin registro</p>
+<div class="card" style="padding:2.5rem;text-align:center;">
+<p style="color:var(--muted);font-size:.9rem;margin-bottom:1.75rem;">Panel de demostración — acceso libre</p>
+<button class="btn btn-primary" style="width:100%;justify-content:center;font-size:1.05rem;padding:1rem;" onclick="handleLogin()" id="loginBtn">
+Ingresar a Kontalo →
+</button>
+<p style="margin-top:1rem;font-size:.75rem;color:var(--faint);">Sin registro ni contraseña</p>
 </div>
 </div>
 </div>
 <div id="appShell" class="hidden" style="display:flex;min-height:100vh;">
-<div class="sidebar" style="width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;flex-shrink:0;">
+<div class="sidebar" style="width:225px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;flex-shrink:0;">
 <div style="padding:1.4rem 1.2rem;border-bottom:1px solid var(--border);"><span class="logo" style="font-size:1.3rem;"><span>kon</span>talo</span></div>
 <div style="padding:1rem 1.2rem;border-bottom:1px solid var(--border);">
 <div style="font-size:.68rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem;">Empresa activa</div>
@@ -86,14 +88,14 @@ input,button,select{font-family:'Inter',sans-serif;}
 <nav style="padding:.75rem;flex:1;" id="navMenu"></nav>
 <div style="padding:1rem 1.2rem;border-top:1px solid var(--border);">
 <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;">
-<div style="width:32px;height:32px;border-radius:50%;background:var(--accentDim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--accent);">K</div>
-<div><div style="font-size:.8rem;font-weight:600;">Kontalo Demo</div><div style="font-size:.68rem;color:var(--faint);">Plan Growth</div></div>
+<div style="width:32px;height:32px;border-radius:50%;background:var(--accentDim);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--accent);">K</div>
+<div><div style="font-size:.8rem;font-weight:600;color:var(--text);">Kontalo Demo</div><div style="font-size:.68rem;color:var(--faint);">Plan Growth</div></div>
 </div>
 <button class="btn btn-danger" style="width:100%;" onclick="handleLogout()">Salir</button>
 </div>
 </div>
 <div style="flex:1;display:flex;flex-direction:column;">
-<div class="ticker-wrap"><div class="ticker-track" id="tickerTrack"><span class="ticker-item"><span class="spinner"></span> Cargando cotizaciones en vivo…</span></div></div>
+<div class="ticker-wrap"><div class="ticker-track" id="tickerTrack"><span class="ticker-item"><span class="spinner"></span> Cargando cotizaciones…</span></div></div>
 <main style="flex:1;padding:1.5rem 2rem;overflow-y:auto;" id="mainContent"></main>
 </div>
 </div><script>
@@ -318,4 +320,4 @@ main.innerHTML='<div class="fade-in">'+
 {label:"🇲🇽 Peso MXN",compra:getRate("MXN"),venta:(parseFloat(getRate("MXN"))*1.01).toFixed(4),var:"+0,20%",up:true},
 {label:"🇨🇴 Peso COP",compra:FALLBACK.COP,venta:FALLBACK.COP,var:"+0,10%",up:true},
 {label:"🇨🇱 Peso CLP",compra:FALLBACK.CLP,venta:FALLBACK.CLP,var:"-0,05%",up:false},
-{label:"🇬🇧 Libra GBP",compra:(1/parseFloat(getRate("GBP"))*0.99).toFixed(4),venta:(1/parseFloat(getRate("GBP"))).toFixed(4),var:"+0,15%",u>
+{label:"🇬🇧 Libra GBP",compra:(1/parseFloat(getRate("GBP"))*0.99).toFixed(4),venta:(1/parseFloat(getRate("GBP"))).toFixed(4),var:"+0,15%",u%",u>
