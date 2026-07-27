@@ -246,4 +246,3 @@ function getCurrencyList(){
 function renderCurrencyCards(){
   const currencies=getCurrencyList();
   return`<div class="fx-grid" style="margin-bottom:1.5rem">${currencies.map(c=>`<div class="fx-card"><div style="display:flex;justify-content:space-between;margin-bottom:.5rem"><span style="font-size:1.4rem">${c.flag}</span><span class="badge badge-green">${c.code}</span></div><div style="font-size:.75rem;color:var(--faint);margin-bottom:.2rem">${c.name}</div><div style="font-family:'S
-<
