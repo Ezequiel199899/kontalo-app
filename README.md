@@ -98,7 +98,7 @@ input,button,select{font-family:'Inter',sans-serif;}
 <div class="ticker-wrap"><div class="ticker-track" id="tickerTrack"><span class="ticker-item"><span class="spinner"></span> Cargando cotizaciones en vivo…</span></div></div>
 <main style="flex:1;padding:1.5rem 2rem;overflow-y:auto;" id="mainContent"></main>
 </div>
-</div><script>
+</div> <script>
 const AV_KEY="42ac3700f76949f6899936a3eb2ad9d2";
 const API_BASE="https://contabilidad-de-datos.onrender.com";
 const MONTHS=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
