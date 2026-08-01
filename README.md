@@ -1,9 +1,9 @@
-<DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Kontalo — Plataforma Financiera</title>
+<title>Kontalo</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 :root{--bg:#0A0F1A;--surface:#111827;--border:#1E2D3D;--accent:#00E5A0;--accentDim:#0D2A1F;--text:#E8EDF5;--muted:#8899AA;--faint:#4A5A6A;--danger:#FF6B6B;--warn:#F59E0B;}
@@ -17,11 +17,10 @@ input,button,select{font-family:'Inter',sans-serif;}
 .btn{border:none;border-radius:7px;cursor:pointer;font-weight:600;font-size:.9rem;display:inline-flex;align-items:center;gap:.5rem;}
 .btn-primary{background:var(--accent);color:var(--bg);padding:.75rem 1.5rem;}
 .btn-primary:hover{background:#00FFB3;}
-.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);padding:.6rem 1.2rem;}
 .btn-danger{background:transparent;color:var(--danger);border:1px solid #FF6B6B22;padding:.5rem 1rem;font-size:.8rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;}
 .input{background:#0A0F1A;border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.9rem;padding:.75rem 1rem;width:100%;outline:none;}
 .input:focus{border-color:var(--accent);}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;}
 .nav-item{color:var(--muted);font-size:.875rem;padding:.6rem .9rem;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:.6rem;}
 .nav-item:hover{background:var(--accentDim);color:var(--accent);}
 .nav-item.active{background:var(--accentDim);color:var(--accent);font-weight:600;}
@@ -61,51 +60,45 @@ input,button,select{font-family:'Inter',sans-serif;}
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
 <div style="width:100%;max-width:420px;" class="fade-in">
 <div style="text-align:center;margin-bottom:2.5rem;">
 <span class="logo" style="font-size:2rem;"><span>kon</span>talo</span>
 <p style="color:var(--muted);margin-top:.6rem;">Tu plataforma financiera inteligente</p>
 </div>
-<div class="card" style="padding:2rem;">
+<div class="card" style="padding:2rem;margin-bottom:1.5rem;">
 <div style="margin-bottom:1rem;">
 <label style="display:block;font-size:.78rem;color:var(--muted);margin-bottom:.35rem;">Email</label>
 <input class="input" id="loginEmail" type="email" placeholder="tu@empresa.com"/>
 </div>
 <div style="margin-bottom:1.5rem;">
 <label style="display:block;font-size:.78rem;color:var(--muted);margin-bottom:.35rem;">Contraseña</label>
-<input class="input" id="loginPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLogin()"/>
+<input class="input" id="loginPass" type="password" placeholder="••••••••"/>
 </div>
 <div id="loginError" style="color:var(--danger);font-size:.8rem;margin-bottom:.9rem;display:none;"></div>
-<button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleLogin()" id="loginBtn">Ingresar</button>
+<button id="loginBtn" style="width:100%;justify-content:center;background:var(--accent);color:var(--bg);border:none;border-radius:7px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;" id="loginBtn">Ingresar</button>
 <p style="text-align:center;margin-top:1rem;font-size:.75rem;color:var(--faint);">Demo: cualquier email y contraseña</p>
 </div>
-<div style="margin-top:2rem;text-align:center;">
-<p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem;">¿Querés usar Kontalo en tu empresa?</p>
-<div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
-<div class="card" style="padding:1.25rem 1.5rem;text-align:center;min-width:160px;">
+<p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem;text-align:center;">¿Querés usar Kontalo en tu empresa?</p>
+<div style="display:flex;gap:.75rem;justify-content:center;">
+<div class="card" style="padding:1.25rem 1.5rem;text-align:center;flex:1;">
 <div style="font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--accent);">$25<span style="font-size:.85rem;color:var(--muted)">/mes</span></div>
 <div style="font-size:.82rem;font-weight:600;color:var(--text);margin:.3rem 0;">Plan PYME</div>
 <div style="font-size:.72rem;color:var(--muted);">1 empresa · Panel completo</div>
 </div>
-<div class="card" style="padding:1.25rem 1.5rem;text-align:center;min-width:160px;border-color:var(--accent);">
+<div class="card" style="padding:1.25rem 1.5rem;text-align:center;flex:1;border-color:var(--accent);">
 <div style="font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--accent);">$99<span style="font-size:.85rem;color:var(--muted)">/mes</span></div>
 <div style="font-size:.82rem;font-weight:600;color:var(--text);margin:.3rem 0;">Plan Estudio Contable</div>
 <div style="font-size:.72rem;color:var(--muted);">Empresas ilimitadas</div>
 </div>
 </div>
-<p style="margin-top:1rem;font-size:.72rem;color:var(--faint);">14 días gratis · Sin tarjeta de crédito · Cancelás cuando querés</p>
-</div>
+<p style="text-align:center;margin-top:1rem;font-size:.72rem;color:var(--faint);">14 días gratis · Sin tarjeta de crédito · Cancelás cuando querés</p>
 </div>
 </div>
 
-<!-- APP -->
 <div id="appShell" class="hidden" style="display:flex;min-height:100vh;">
 <div class="sidebar" style="width:225px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;flex-shrink:0;">
-<div style="padding:1.4rem 1.2rem;border-bottom:1px solid var(--border);">
-<span class="logo" style="font-size:1.3rem;"><span>kon</span>talo</span>
-</div>
+<div style="padding:1.4rem 1.2rem;border-bottom:1px solid var(--border);"><span class="logo" style="font-size:1.3rem;"><span>kon</span>talo</span></div>
 <div style="padding:1rem 1.2rem;border-bottom:1px solid var(--border);">
 <div style="font-size:.68rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem;">Empresa activa</div>
 <select id="companySelect" class="input" style="padding:.5rem .7rem;font-size:.82rem;cursor:pointer;" onchange="changeCompany()">
@@ -117,11 +110,8 @@ input,button,select{font-family:'Inter',sans-serif;}
 <nav style="padding:.75rem;flex:1;" id="navMenu"></nav>
 <div style="padding:1rem 1.2rem;border-top:1px solid var(--border);">
 <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;">
-<div style="width:32px;height:32px;border-radius:50%;background:var(--accentDim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--accent);" id="userAvatar">--</div>
-<div>
-<div style="font-size:.8rem;font-weight:600;color:var(--text);" id="userName">—</div>
-<div style="font-size:.68rem;color:var(--faint);" id="userPlan">Plan PYME</div>
-</div>
+<div id="userAvatar" style="width:32px;height:32px;border-radius:50%;background:var(--accentDim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--accent);">--</div>
+<div><div id="userName" style="font-size:.8rem;font-weight:600;color:var(--text);">—</div><div style="font-size:.68rem;color:var(--faint);">Plan PYME</div></div>
 </div>
 <button class="btn btn-danger" style="width:100%;" onclick="handleLogout()">Salir</button>
 </div>
@@ -147,12 +137,12 @@ const INVOICES=[
 {id:"FAC-006",client:"Harbor Imports",amount:44100,date:"25 May",status:"pending"}
 ];
 const STOCK=[
-{cod:"FER-001",prod:"Tornillos 1/2\" x100",stock:450,min:100,precio:2800,est:"ok"},
-{cod:"FER-002",prod:"Pintura látex blanco 4L",stock:28,min:30,precio:15400,est:"low"},
+{cod:"FER-001",prod:"Tornillos 1/2 x100",stock:450,min:100,precio:2800,est:"ok"},
+{cod:"FER-002",prod:"Pintura látex 4L",stock:28,min:30,precio:15400,est:"low"},
 {cod:"FER-003",prod:"Cable eléctrico 2.5mm",stock:12,min:20,precio:48000,est:"low"},
 {cod:"FER-004",prod:"Cemento Portland 50kg",stock:95,min:50,precio:8900,est:"ok"},
-{cod:"FER-005",prod:"Caño PVC 3\" x6m",stock:5,min:15,precio:12500,est:"critical"},
-{cod:"FER-006",prod:"Llave inglesa 12\"",stock:33,min:20,precio:9800,est:"ok"},
+{cod:"FER-005",prod:"Caño PVC 3 x6m",stock:5,min:15,precio:12500,est:"critical"},
+{cod:"FER-006",prod:"Llave inglesa 12",stock:33,min:20,precio:9800,est:"ok"},
 {cod:"FER-007",prod:"Discos de corte x10",stock:8,min:25,precio:6500,est:"critical"},
 {cod:"FER-008",prod:"Silicona transp. 280ml",stock:62,min:30,precio:3200,est:"ok"}
 ];
@@ -172,15 +162,13 @@ const ALERTS=[
 ];
 const NAV=[
 {id:"dashboard",icon:"⬡",label:"Panel"},
-{id:"markets",icon:"◇",label:"FX & Mercados"},
+{id:"markets",icon:"◇",label:"FX y Mercados"},
 {id:"invoices",icon:"◈",label:"Facturas"},
 {id:"stock",icon:"📦",label:"Stock"},
 {id:"cierre",icon:"🔒",label:"Cierre de Caja"},
 {id:"alerts",icon:"△",label:"Alertas",badge:3},
 {id:"cashflow",icon:"◎",label:"Flujo de Caja"}
 ];
-
-// Fallback precios referencia
 const FB={
 EUR:"0.8790",BRL:"5.0827",MXN:"17.48",GBP:"0.7505",CNY:"6.7722",
 ARS_BNA_C:"1470",ARS_BNA_V:"1520",
@@ -188,48 +176,35 @@ ARS_BLUE_C:"1525",ARS_BLUE_V:"1545",
 ARS_MEP:"1531",CLP:"945",COP:"3196",
 gold:"4.068",silver:"58.88",oil:"73.40",soy:"281",wheat:"5.64",corn:"281"
 };
-
 let currentCompany=0,currentPage="dashboard";
-let mkt={rates:{},gold:null,silver:null,bcra:{oficial_c:null,oficial_v:null,blue_c:null,blue_v:null,mep:null}};
-
+let mkt={rates:{},gold:null,silver:null,bna_c:null,bna_v:null,blue_c:null,blue_v:null,mep:null};
 const AR=function(n){return Number(n).toLocaleString("es-AR");};
 function fmt(n){if(n>=1e6)return"$"+(n/1e6).toFixed(1)+"M";if(n>=1000)return"$"+(n/1000).toFixed(0)+"K";return"$"+n;}
 function getR(c){return mkt.rates[c]||FB[c]||"—";}
 function getGold(){return mkt.gold||FB.gold;}
 function getSilver(){return mkt.silver||FB.silver;}
-function getBnac(){return mkt.bcra.oficial_c||FB.ARS_BNA_C;}
-function getBnav(){return mkt.bcra.oficial_v||FB.ARS_BNA_V;}
-function getBluec(){return mkt.bcra.blue_c||FB.ARS_BLUE_C;}
-function getBluev(){return mkt.bcra.blue_v||FB.ARS_BLUE_V;}
-function getMep(){return mkt.bcra.mep||FB.ARS_MEP;}
+function getBnac(){return mkt.bna_c||FB.ARS_BNA_C;}
+function getBnav(){return mkt.bna_v||FB.ARS_BNA_V;}
+function getBluec(){return mkt.blue_c||FB.ARS_BLUE_C;}
+function getBluev(){return mkt.blue_v||FB.ARS_BLUE_V;}
+function getMep(){return mkt.mep||FB.ARS_MEP;}
 
-// BCRA API — estadisticasbcra.com (sin token, datos del día)
 async function loadBCRA(){
 try{
-const today=new Date().toISOString().split("T")[0];
-const [ofRes,blueRes]=await Promise.allSettled([
-fetch("https://api.estadisticasbcra.com/usd_of_minorista").then(function(r){return r.json();}),
-fetch("https://api.estadisticasbcra.com/usd").then(function(r){return r.json();})
-]);
-if(ofRes.status==="fulfilled"&&ofRes.value.length){
-const last=ofRes.value[ofRes.value.length-1];
-mkt.bcra.oficial_v=Math.round(last.v).toString();
-mkt.bcra.oficial_c=Math.round(last.v*0.967).toString();
-}
-if(blueRes.status==="fulfilled"&&blueRes.value.length){
-const last=blueRes.value[blueRes.value.length-1];
-mkt.bcra.blue_v=Math.round(last.v).toString();
-mkt.bcra.blue_c=Math.round(last.v*0.987).toString();
-}
+const r=await fetch("https://api.estadisticasbcra.com/usd_of_minorista").then(function(x){return x.json();});
+if(r&&r.length){var v=Math.round(r[r.length-1].v);mkt.bna_v=v.toString();mkt.bna_c=Math.round(v*0.967).toString();}
+}catch(e){}
+try{
+const r=await fetch("https://api.estadisticasbcra.com/usd").then(function(x){return x.json();});
+if(r&&r.length){var v=Math.round(r[r.length-1].v);mkt.blue_v=v.toString();mkt.blue_c=Math.round(v*0.987).toString();}
 }catch(e){}
 }
 
-// Alpha Vantage — pares internacionales + metales
 async function loadMarkets(){
 await loadBCRA();
 try{
-const pp=["EUR","BRL","MXN","GBP","CNY"];
-const rr=await Promise.allSettled(pp.map(function(p){
+var pp=["EUR","BRL","MXN","GBP","CNY"];
+var rr=await Promise.allSettled(pp.map(function(p){
 return fetch("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency="+p+"&apikey="+AV_KEY).then(function(r){return r.json();});
 }));
 rr.forEach(function(r,i){
@@ -239,12 +214,12 @@ mkt.rates[pp[i]]=parseFloat(r.value["Realtime Currency Exchange Rate"]["5. Excha
 });
 }catch(e){}
 try{
-const g=await fetch("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=XAU&to_currency=USD&apikey="+AV_KEY).then(function(r){return r.json();});
+var g=await fetch("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=XAU&to_currency=USD&apikey="+AV_KEY).then(function(r){return r.json();});
 if(g["Realtime Currency Exchange Rate"]){mkt.gold=parseFloat(g["Realtime Currency Exchange Rate"]["5. Exchange Rate"]).toLocaleString("es-AR",{maximumFractionDigits:2});}
 else{mkt.gold=FB.gold;}
 }catch(e){mkt.gold=FB.gold;}
 try{
-const s=await fetch("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=XAG&to_currency=USD&apikey="+AV_KEY).then(function(r){return r.json();});
+var s=await fetch("https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=XAG&to_currency=USD&apikey="+AV_KEY).then(function(r){return r.json();});
 if(s["Realtime Currency Exchange Rate"]){mkt.silver=parseFloat(s["Realtime Currency Exchange Rate"]["5. Exchange Rate"]).toFixed(2);}
 else{mkt.silver=FB.silver;}
 }catch(e){mkt.silver=FB.silver;}
@@ -253,8 +228,8 @@ if(currentPage==="dashboard"||currentPage==="markets")renderPage(currentPage);
 }
 
 function renderTicker(){
-const track=document.getElementById("tickerTrack");
-const items=[
+var track=document.getElementById("tickerTrack");
+var items=[
 {label:"USD/ARS BNA",val:"C $"+getBnac()+" V $"+getBnav(),up:false},
 {label:"USD/ARS Blue",val:"C $"+getBluec()+" V $"+getBluev(),up:false},
 {label:"Dólar MEP",val:"$"+getMep(),up:true},
@@ -266,25 +241,25 @@ const items=[
 {label:"ORO oz",val:"USD "+getGold(),up:true},
 {label:"PLATA oz",val:"USD "+getSilver(),up:true},
 {label:"SOJA",val:"USD "+FB.soy,up:false},
-{label:"MAÍZ",val:"USD "+FB.corn,up:false},
-{label:"PETRÓLEO",val:"USD "+FB.oil,up:true},
+{label:"MAIZ",val:"USD "+FB.corn,up:false},
+{label:"PETROLEO",val:"USD "+FB.oil,up:true}
 ];
-const all=items.concat(items);
+var all=items.concat(items);
 track.innerHTML=all.map(function(i){
 return'<span class="ticker-item"><span style="color:var(--faint)">'+i.label+'</span><span style="color:'+(i.up?'var(--accent)':'var(--danger)')+';font-weight:600">'+i.val+'</span><span style="color:'+(i.up?'var(--accent)':'var(--danger)')+';font-size:.65rem">'+(i.up?'▲':'▼')+'</span></span>';
 }).join("");
 }
 
 function handleLogin(){
-const email=document.getElementById("loginEmail").value;
-const pass=document.getElementById("loginPass").value;
-const err=document.getElementById("loginError");
+var email=document.getElementById("loginEmail").value;
+var pass=document.getElementById("loginPass").value;
+var err=document.getElementById("loginError");
 if(!email||!pass){err.textContent="Completá email y contraseña.";err.style.display="block";return;}
 err.style.display="none";
-const btn=document.getElementById("loginBtn");
-btn.innerHTML='<span class="spinner"></span> Ingresando...';btn.disabled=true;
+var btn=document.getElementById("loginBtn");
+btn.textContent="Ingresando...";btn.disabled=true;
 setTimeout(function(){
-const initials=email.split("@")[0].slice(0,2).toUpperCase();
+var initials=email.split("@")[0].slice(0,2).toUpperCase();
 document.getElementById("userAvatar").textContent=initials;
 document.getElementById("userName").textContent=email.split("@")[0];
 document.getElementById("loginScreen").classList.add("hidden");
@@ -294,12 +269,15 @@ renderNav();renderPage("dashboard");loadMarkets();
 },900);
 }
 
+document.getElementById("loginBtn").addEventListener("click",handleLogin);
+document.getElementById("loginPass").addEventListener("keydown",function(e){if(e.key==="Enter")handleLogin();});
+
 function handleLogout(){
 document.getElementById("appShell").classList.add("hidden");
 document.getElementById("loginScreen").classList.remove("hidden");
 document.getElementById("loginEmail").value="";
 document.getElementById("loginPass").value="";
-document.getElementById("loginBtn").innerHTML="Ingresar";
+document.getElementById("loginBtn").textContent="Ingresar";
 document.getElementById("loginBtn").disabled=false;
 }
 
@@ -313,8 +291,8 @@ return'<div class="nav-item '+(currentPage===n.id?'active':'')+'" onclick="rende
 
 function renderPage(page){
 currentPage=page;renderNav();
-const co=COMPANIES[currentCompany];
-const main=document.getElementById("mainContent");
+var co=COMPANIES[currentCompany];
+var main=document.getElementById("mainContent");
 if(page==="dashboard")renderDashboard(main,co);
 else if(page==="markets")renderMarkets(main);
 else if(page==="invoices")renderInvoices(main);
@@ -324,19 +302,19 @@ else if(page==="alerts")renderAlerts(main);
 else if(page==="cashflow")renderCashflow(main,co);
 }
 
-function kpiCard(label,val,delta,deltaUp){
-return'<div class="card" style="padding:1rem 1.2rem"><div style="font-size:.68rem;color:var(--faint);text-transform:uppercase;margin-bottom:.4rem">'+label+'</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.55rem;font-weight:700;color:var(--text)">'+val+'</div>'+(delta?'<div style="font-size:.75rem;color:'+(deltaUp?'var(--accent)':'var(--danger)')+'">'+delta+'</div>':'')+'</div>';
+function kpi(label,val,delta,up){
+return'<div class="card" style="padding:1rem 1.2rem"><div style="font-size:.68rem;color:var(--faint);text-transform:uppercase;margin-bottom:.4rem">'+label+'</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.55rem;font-weight:700;color:var(--text)">'+val+'</div>'+(delta?'<div style="font-size:.75rem;color:'+(up?'var(--accent)':'var(--danger)')+'">'+delta+'</div>':'')+'</div>';
 }
 
 function fxRow(l,c,v,va,up){
-return'<div class="tbl-r fx-cols"><span style="font-size:.88rem;font-weight:500;color:var(--text)">'+l+'</span><span style="font-size:.92rem;font-weight:700;color:#1a1a2e;background:#E8EDF5;padding:.15rem .5rem;border-radius:5px">$'+c+'</span><span style="font-size:.92rem;font-weight:700;color:#1a1a2e;background:#E8EDF5;padding:.15rem .5rem;border-radius:5px">$'+v+'</span><span style="font-size:.82rem;color:'+(up?'var(--accent)':'var(--danger)')+'">'+va+'</span></div>';
+return'<div class="tbl-r fx-cols"><span style="font-size:.88rem;font-weight:500;color:var(--text)">'+l+'</span><span style="font-size:.92rem;font-weight:700;color:var(--text)">$'+c+'</span><span style="font-size:.92rem;font-weight:700;color:var(--text)">$'+v+'</span><span style="font-size:.82rem;color:'+(up?'var(--accent)':'var(--danger)')+'">'+va+'</span></div>';
 }
 
 function comCard(n,u,v){
 return'<div class="fx-card"><div style="font-size:.75rem;color:var(--muted);margin-bottom:.2rem">'+n+'</div><div style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:1.05rem;color:var(--accent)">'+v+'</div><div style="font-size:.68rem;color:var(--faint)">por '+u+'</div></div>';
 }
 
-function buildFxTable(){
+function fxTable(){
 return'<div class="card" style="margin-bottom:1.5rem;overflow:hidden">'+
 '<div class="tbl-h fx-cols"><span>Moneda</span><span>Compra</span><span>Venta</span><span>Var.</span></div>'+
 fxRow("🇦🇷 Dólar BNA",getBnac(),getBnav(),"+0,66%",true)+
@@ -349,7 +327,7 @@ fxRow("🇨🇴 Peso COP",FB.COP,FB.COP,"+0,10%",true)+
 '</div>';
 }
 
-function buildComGrid(){
+function comGrid(){
 return'<div class="com-grid">'+
 comCard("🥇 Oro","troy oz","USD "+getGold())+
 comCard("🥈 Plata","troy oz","USD "+getSilver())+
@@ -361,24 +339,24 @@ comCard("🌽 Maíz","tonelada","USD "+FB.corn)+
 }
 
 function renderDashboard(main,co){
-const latest=co.seed[5]*1000,prev=co.seed[4]*1000;
-const delta=(((latest-prev)/prev)*100).toFixed(1);
-const avg=Math.round(co.seed.reduce(function(a,b){return a+b;},0)/co.seed.length*1000);
-const proj=Math.round(co.seed[5]*1000*1.08);
+var latest=co.seed[5]*1000,prev=co.seed[4]*1000;
+var delta=(((latest-prev)/prev)*100).toFixed(1);
+var avg=Math.round(co.seed.reduce(function(a,b){return a+b;},0)/co.seed.length*1000);
+var proj=Math.round(co.seed[5]*1000*1.08);
 main.innerHTML='<div class="fade-in">'+
 '<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:.2rem;">Panel Principal</h1>'+
 '<p style="color:var(--muted);font-size:.82rem;margin-bottom:1.5rem;">'+co.name+' · '+co.sector+'</p>'+
 '<div class="sec">📊 Resumen financiero</div>'+
 '<div class="kpi-grid">'+
-kpiCard("Flujo de caja",fmt(latest),(+delta>0?'▲':'▼')+' '+delta+'% vs mes ant.',+delta>0)+
-kpiCard("Proyección estimada",fmt(proj),"▲ +8% estimado",true)+
-kpiCard("Promedio mensual",fmt(avg),"▲ Últimos 6 meses",true)+
-kpiCard("Alertas activas","3","▼ 1 crítica",false)+
+kpi("Flujo de caja",fmt(latest),(+delta>0?'▲':'▼')+' '+delta+'% vs mes ant.',+delta>0)+
+kpi("Proyección estimada",fmt(proj),"▲ +8% estimado",true)+
+kpi("Promedio mensual",fmt(avg),"▲ Últimos 6 meses",true)+
+kpi("Alertas activas","3","▼ 1 crítica",false)+
 '</div>'+
-'<div class="sec">💱 Cotizaciones del día — BCRA + Mercado</div>'+
-buildFxTable()+
+'<div class="sec">💱 Cotizaciones del día</div>'+
+fxTable()+
 '<div class="sec">🌾 Commodities</div>'+
-buildComGrid()+
+comGrid()+
 '<div class="bottom-grid">'+
 '<div><div class="sec">◈ Facturas recientes</div>'+
 '<div class="card" style="overflow:hidden">'+
@@ -396,8 +374,8 @@ return'<div class="alert-item alert-'+a.type+' card" style="margin-bottom:.6rem;
 
 function renderMarkets(main){
 main.innerHTML='<div class="fade-in">'+
-'<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">FX & Mercados</h1>'+
-'<div class="sec">💱 Divisas — Compra y Venta · BCRA + Mercado</div>'+
+'<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">FX y Mercados</h1>'+
+'<div class="sec">💱 Divisas — Compra y Venta</div>'+
 '<div class="card" style="margin-bottom:1.5rem;overflow:hidden">'+
 '<div class="tbl-h fx-cols"><span>Moneda</span><span>Compra</span><span>Venta</span><span>Var.</span></div>'+
 fxRow("🇦🇷 Dólar BNA",getBnac(),getBnav(),"+0,66%",true)+
@@ -412,15 +390,8 @@ fxRow("🇬🇧 Libra GBP",(1/parseFloat(getR("GBP"))*0.99).toFixed(4),(1/parseF
 fxRow("🇨🇳 Yuan CNY",getR("CNY"),(parseFloat(getR("CNY"))*1.01).toFixed(4),"-0,08%",false)+
 '</div>'+
 '<div class="sec">🌾 Commodities</div>'+
-'<div class="com-grid">'+
-comCard("🥇 Oro","troy oz","USD "+getGold())+
-comCard("🥈 Plata","troy oz","USD "+getSilver())+
-comCard("🛢️ Petróleo","barril","USD "+FB.oil)+
-comCard("🌾 Soja","tonelada","USD "+FB.soy)+
-comCard("🌿 Trigo","bushel","USD "+FB.wheat)+
-comCard("🌽 Maíz","tonelada","USD "+FB.corn)+
-'</div>'+
-'<p style="font-size:.72rem;color:var(--faint);margin-top:.5rem;">🇦🇷 Dólar oficial y blue: API estadisticasbcra.com · Divisas internacionales: Alpha Vantage · Metales: Alpha Vantage · Commodities agrícolas: referencia de mercado</p>'+
+comGrid()+
+'<p style="font-size:.72rem;color:var(--faint);margin-top:.5rem;">Fuentes: BCRA · Alpha Vantage · Referencia de mercado</p>'+
 '</div>';
 }
 
@@ -428,44 +399,55 @@ function renderInvoices(main){
 main.innerHTML='<div class="fade-in">'+
 '<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Facturas</h1>'+
 '<div class="card" style="overflow:hidden">'+
-'<div class="tbl-h inv-cols" style="background:#0D1520"><span>Nº</span><span>Cliente</span><span>Monto</span><span>Fecha</span><span>Estado</span></div>'+
+'<div class="tbl-h inv-cols"><span>Nº</span><span>Cliente</span><span>Monto</span><span>Fecha</span><span>Estado</span></div>'+
 INVOICES.map(function(inv){
-return'<div class="tbl-r inv-cols" style="background:var(--surface)"><span style="font-size:.85rem;font-weight:700;color:var(--accent)">'+inv.id+'</span><span style="font-size:.9rem;font-weight:600;color:var(--text)">'+inv.client+'</span><span style="font-size:.98rem;font-weight:700;color:var(--text)">$'+AR(inv.amount)+'</span><span style="font-size:.85rem;color:var(--muted)">'+inv.date+'</span><span class="badge badge-'+(inv.status==='paid'?'green':inv.status==='overdue'?'red':'yellow')+'">'+(inv.status==='paid'?'Pagada':inv.status==='overdue'?'Vencida':'Pendiente')+'</span></div>';
+return'<div class="tbl-r inv-cols"><span style="font-size:.85rem;font-weight:700;color:var(--accent)">'+inv.id+'</span><span style="font-size:.9rem;font-weight:600;color:var(--text)">'+inv.client+'</span><span style="font-size:.98rem;font-weight:700;color:var(--text)">$'+AR(inv.amount)+'</span><span style="font-size:.85rem;color:var(--muted)">'+inv.date+'</span><span class="badge badge-'+(inv.status==='paid'?'green':inv.status==='overdue'?'red':'yellow')+'">'+(inv.status==='paid'?'Pagada':inv.status==='overdue'?'Vencida':'Pendiente')+'</span></div>';
 }).join('')+
 '</div></div>';
 }
 
 function renderStock(main){
-const crit=STOCK.filter(function(s){return s.est==='critical';}).length;
-const low=STOCK.filter(function(s){return s.est==='low';}).length;
+var crit=STOCK.filter(function(s){return s.est==='critical';}).length;
+var low=STOCK.filter(function(s){return s.est==='low';}).length;
 main.innerHTML='<div class="fade-in">'+
 '<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Stock</h1>'+
 '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;margin-bottom:1.5rem">'+
-kpiCard("Total productos",STOCK.length.toString(),"",true)+
-kpiCard("Stock crítico",crit.toString(),"▼ Reponer urgente",false)+
-kpiCard("Stock bajo",low.toString(),"⚠ Bajo mínimo",false)+
+kpi("Total productos",STOCK.length.toString(),"",true)+
+kpi("Stock crítico",crit.toString(),"▼ Reponer urgente",false)+
+kpi("Stock bajo",low.toString(),"⚠ Bajo mínimo",false)+
 '</div>'+
 '<div class="card" style="overflow:hidden">'+
 '<div class="tbl-h stk-cols"><span>Código</span><span>Producto</span><span>Stock</span><span>Mín.</span><span>Precio</span><span>Estado</span></div>'+
 STOCK.map(function(s){
-const ec=s.est==='critical'?'var(--danger)':s.est==='low'?'var(--warn)':'var(--accent)';
-const el=s.est==='critical'?'Crítico':s.est==='low'?'Bajo':'OK';
-const eb=s.est==='critical'?'red':s.est==='low'?'yellow':'green';
+var ec=s.est==='critical'?'var(--danger)':s.est==='low'?'var(--warn)':'var(--accent)';
+var el=s.est==='critical'?'Crítico':s.est==='low'?'Bajo':'OK';
+var eb=s.est==='critical'?'red':s.est==='low'?'yellow':'green';
 return'<div class="tbl-r stk-cols"><span style="font-size:.82rem;font-weight:600;color:var(--accent)">'+s.cod+'</span><span style="font-size:.88rem;font-weight:500;color:var(--text)">'+s.prod+'</span><span style="font-size:.95rem;font-weight:700;color:'+ec+'">'+s.stock+'</span><span style="font-size:.88rem;color:var(--muted)">'+s.min+'</span><span style="font-size:.9rem;font-weight:700;color:var(--text)">$'+AR(s.precio)+'</span><span class="badge badge-'+eb+'">'+el+'</span></div>';
 }).join('')+
 '</div></div>';
 }
 
 function renderCierre(main){
-const ul=CIERRES[0];
+var ul=CIERRES[0];
 main.innerHTML='<div class="fade-in">'+
 '<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Cierre de Caja</h1>'+
 '<div class="kpi-grid">'+
-kpiCard("Apertura hoy","$"+AR(ul.apertura),"",true)+
-kpiCard("Ventas del día","$"+AR(ul.ventas),"▲ Del día",true)+
-kpiCard("Gastos del día","$"+AR(ul.gastos),"▼ Del día",false)+
+kpi("Apertura hoy","$"+AR(ul.apertura),"",true)+
+kpi("Ventas del día","$"+AR(ul.ventas),"▲ Del día",true)+
+kpi("Gastos del día","$"+AR(ul.gastos),"▼ Del día",false)+
 '<div class="card" style="padding:1rem 1.2rem"><div style="font-size:.68rem;color:var(--faint);text-transform:uppercase;margin-bottom:.4rem">Cierre</div><div style="font-family:\'Space Grotesk\',sans-serif;font-size:1.55rem;font-weight:700;color:var(--text)">$'+AR(ul.cierre)+'</div><div style="font-size:.75rem;color:'+(ul.dif>=0?'var(--accent)':'var(--danger)')+'">Diferencia: '+(ul.dif>=0?'+':'')+ul.dif+'</div></div>'+
 '</div>'+
 '<div class="sec">📋 Historial de cierres</div>'+
 '<div class="card" style="overflow:hidden">'+
-'<div class="tbl-h caj-cols"><span>Fecha
+'<div class="tbl-h caj-cols"><span>Fecha</span><span>Apertura</span><span>Ventas</span><span>Gastos</span><span>Cierre</span><span>Dif.</span></div>'+
+CIERRES.map(function(c){
+return'<div class="tbl-r caj-cols"><span style="font-size:.88rem;font-weight:500;color:var(--text)">'+c.fecha+'</span><span style="font-size:.9rem;font-weight:600;color:var(--text)">$'+AR(c.apertura)+'</span><span style="font-size:.9rem;font-weight:700;color:var(--accent)">$'+AR(c.ventas)+'</span><span style="font-size:.9rem;font-weight:700;color:var(--danger)">$'+AR(c.gastos)+'</span><span style="font-size:.9rem;font-weight:700;color:var(--text)">$'+AR(c.cierre)+'</span><span style="font-size:.9rem;font-weight:700;color:'+(c.dif>=0?'var(--accent)':'var(--danger)')+'">'+(c.dif>=0?'+':'')+c.dif+'</span></div>';
+}).join('')+
+'</div></div>';
+}
+
+function renderAlerts(main){
+main.innerHTML='<div class="fade-in">'+
+'<h1 style="font-family:\'Space Grotesk\',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Alertas</h1>'+
+'<div style="max-width:700px">'+
+ALERTS.map(func
