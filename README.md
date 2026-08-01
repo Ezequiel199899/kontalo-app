@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -268,7 +269,6 @@ document.getElementById("appShell").style.display="flex";
 renderNav();renderPage("dashboard");loadMarkets();
 },900);
 }
-
 
 window.onload=function(){
 document.getElementById("loginBtn").addEventListener("click",handleLogin);
