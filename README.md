@@ -1,3 +1,4 @@
+cat > /mnt/user-data/outputs/index.html << 'ENDOFFILE'
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -348,5 +349,4 @@ main.innerHTML='<div class="fade-in">'+
 '<div class="card" style="margin-bottom:1.5rem;overflow:hidden">'+
 '<div class="tbl-h fx-cols"><span>Moneda</span><span>Compra</span><span>Venta</span><span>Var.</span></div>'+
 fxRow("🇦🇷 Dolar BNA",getBnac(),getBnav(),"+0,66%",true)+
-fxRow("🇦🇷 Dolar Blue",getBluec(),getBluev(),"-0,32%",false)+
-fxRow("🇦🇷 Dolar MEP",FB.ARS_
+fxRow("🇦🇷 Dolar Blue",getBluec(),get
