@@ -1,300 +1,921 @@
-src/App.jsx.  import { useState, useEffect, useCallback } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const G = {
-  bg:"#0A0F1A", surface:"#111827", border:"#1E2D3D",
-  accent:"#00E5A0", accentDim:"#0D2A1F", accentHover:"#00FFB3",
-  text:"#E8EDF5", muted:"#8899AA", faint:"#4A5A6A",
-  danger:"#FF6B6B", warn:"#F59E0B",
-  fontDisplay:"'Space Grotesk', sans-serif",
-  fontBody:"'Inter', system-ui, sans-serif",
+  > import os, sqlite3, requests
+from flask import Flask, request, jsonify, render_template_string
+
+app = Flask(__name__)
+DB = os.getenv("DB_PATH", "kontalo.db")
+
+HTML = r"""
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kontalo</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#071019;color:#edf3f8;font-family:Arial,sans-serif}
+.top{height:64px;background:#09131e;border-bottom:1px solid #1d3040;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+.logo{font-size:22px;font-weight:800}.logo b{color:#00e5a0}
+.pill{border:1px solid #1d3040;padding:7px 10px;border-radius:8px;color:#9db0c1;font-size:12px}
+.layout{display:grid;grid-template-columns:220px 1fr}
+.side{padding:15px;background:#09131e;min-height:calc(100vh - 64px);border-right:1px solid #1d3040}
+.nav{display:block;width:100%;border:0;background:transparent;color:#9db0c1;text-align:left;padding:11px;border-radius:8px;margin:3px 0;cursor:pointer}
+.nav:hover,.nav.active{background:#0d2d25;color:#00e5a0}
+.main{padding:24px;max-width:1500px;width:100%;margin:auto}
+.title{font-size:27px;font-weight:800}.sub,.small{color:#8fa2b4;font-size:12px}
+.sub{margin:4px 0 20px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card{background:#0d1824;border:1px solid #1d3040;border-radius:12px;padding:16px}
+.value{font-size:24px;font-weight:800;margin:7px 0}
+.ok{color:#00e5a0}.bad{color:#ff6b6b}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px 7px;border-bottom:1px solid #1d3040;font-size:12px;text-align:left}
+.table th{color:#8fa2b4}
+.btn{border:1px solid #1d3040;background:#111f2d;color:#edf3f8;padding:9px 12px;border-radius:8px;cursor:pointer}
+.primary{background:#00e5a0;color:#06120e;font-weight:800}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.alert{padding:11px;margin:7px 0;border-left:3px solid #f6b73c;background:#101c27;border-radius:0 8px 8px 0}
+.alert.bad{border-left-color:#ff6b6b}.alert.ok{border-left-color:#00e5a0}
+.market{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.badge{font-size:10px;padding:4px 8px;border-radius:999px;background:#332914;color:#f6b73c}
+.green{background:#0d2d25;color:#00e5a0}.red{background:#321b22;color:#ff6b6b}
+@media(max-width:900px){
+.layout{grid-template-columns:1fr}.side{display:flex;overflow:auto;min-height:auto}
+.nav{min-width:max-content}.grid,.grid3,.market{grid-template-columns:1fr 1fr}
+}
+@media(max-width:550px){
+.grid,.grid3,.market{grid-template-columns:1fr}.main{padding:14px}
+}
+</style>
+</head>
+
+<body>
+
+<header class="top">
+<div class="logo">kontalo<b>.</b></div>
+<div class="pill">BCRA · IA · PostgreSQL-ready</div>
+</header>
+
+<div class="layout">
+<aside class="side" id="nav"></aside>
+<main class="main" id="main"></main>
+</div>
+
+<script>
+
+const menus=[
+["dashboard","⬡ Dashboard"],
+["cashflow","◎ Flujo de caja"],
+["invoices","◈ Facturación"],
+["stock","▦ Stock"],
+["budget","▤ Presupuesto"],
+["investments","◇ Inversiones"],
+["markets","◌ Cotizaciones BCRA"],
+["commodities","◆ Commodities"],
+["alerts","△ Alertas"]
+];
+
+let page="dashboard";
+
+const nav=()=>{
+document.getElementById("nav").innerHTML=
+menus.map(x=>`
+<button class="nav ${page==x[0]?"active":""}"
+onclick="go('${x[0]}')">${x[1]}</button>
+`).join("");
 };
 
-const API_BASE = "https://contabilidad-de-datos.onrender.com";
+const money=n=>
+new Intl.NumberFormat("es-AR",{
+style:"currency",
+currency:"ARS",
+maximumFractionDigits:0
+}).format(n);
 
-async function fetchForecast(values) {
-  const res = await fetch(`${API_BASE}/forecast`, {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ values }),
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+async function api(u,o){
+let r=await fetch(u,o);
+return r.json();
 }
 
-async function fetchFXRates() {
-  const res = await fetch("https://api.frankfurter.dev/v1/latest?from=USD&to=EUR,ARS,BRL,MXN,COP,CLP,GBP,CNY");
-  if (!res.ok) throw new Error("FX API error");
-  const data = await res.json();
-  return { rates: data.rates, date: data.date };
+async function go(p){
+page=p;
+nav();
+render();
 }
 
-async function fetchCommodities() {
-  const [goldRes, silverRes] = await Promise.allSettled([
-    fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json"),
-    fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xag.json"),
-  ]);
-  const gold   = goldRes.status==="fulfilled"   ? await goldRes.value.json()   : null;
-  const silver = silverRes.status==="fulfilled" ? await silverRes.value.json() : null;
-  return {
-    goldUSD:   gold   ? +(1/gold.xau.usd).toFixed(2)   : null,
-    silverUSD: silver ? +(1/silver.xag.usd).toFixed(2) : null,
-  };
+function card(a,b,c=""){
+return `
+<div class="card">
+<div class="small">${a}</div>
+<div class="value">${b}</div>
+<div class="small">${c}</div>
+</div>`;
 }
 
-const COMPANIES = [
-  { id:1, name:"El Clavo Hardware",  sector:"Retail",        plan:"Growth",  seed:[210,195,230,215,240,225], currency:"ARS" },
-  { id:2, name:"Soto Import SA",     sector:"Import/Export", plan:"Scale",   seed:[450,480,510,490,530,505], currency:"USD" },
-  { id:3, name:"Dubois Consulting",  sector:"Services",      plan:"Starter", seed:[80,95,88,102,91,110],     currency:"BRL" },
-];
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const INVOICES = [
-  { id:"INV-001", client:"BuildCo Ltd",    amount:12400, date:"Jun 10", status:"paid"    },
-  { id:"INV-002", client:"Metro Supplies", amount:8750,  date:"Jun 08", status:"pending" },
-  { id:"INV-003", client:"Alpha Group",    amount:31200, date:"Jun 05", status:"paid"    },
-  { id:"INV-004", client:"City Works",     amount:5600,  date:"Jun 01", status:"overdue" },
-  { id:"INV-005", client:"TechParts SA",   amount:19800, date:"May 28", status:"paid"    },
-  { id:"INV-006", client:"Harbor Imports", amount:44100, date:"May 25", status:"pending" },
-];
-const ALERTS = [
-  { type:"danger", title:"Cash flow risk detected",      desc:"Projected cash drops below threshold in May.",      time:"2h ago" },
-  { type:"warn",   title:"Invoice overdue â€” City Works", desc:"INV-004 for $5,600 is 14 days overdue.",           time:"1d ago" },
-  { type:"ok",     title:"Monthly target reached",       desc:"June inflow exceeded forecast by 12.4%.",           time:"2d ago" },
-  { type:"ok",     title:"FX rate opportunity",          desc:"Favorable USD spread â€” optimal for import orders.", time:"3d ago" },
-];
-const NAV = [
-  { id:"dashboard", icon:"â¬¡", label:"Dashboard" },
-  { id:"cashflow",  icon:"â—Ž", label:"Cash Flow" },
-  { id:"markets",   icon:"â—‡", label:"FX & Markets" },
-  { id:"invoices",  icon:"â—ˆ", label:"Invoices" },
-  { id:"alerts",    icon:"â–³", label:"Alerts", badge:2 },
-  { id:"settings",  icon:"âŒ–", label:"Settings" },
-];
-const fmt = n => n>=1e6?`$${(n/1e6).toFixed(1)}M`:n>=1000?`$${(n/1000).toFixed(0)}K`:`$${n}`;   const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
-  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-  body { background:${G.bg}; color:${G.text}; font-family:${G.fontBody}; }
-  ::selection { background:${G.accent}; color:${G.bg}; }
-  input,button,select { font-family:${G.fontBody}; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes spin   { to{transform:rotate(360deg)} }
-  @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
-  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-  .fade-in { animation:fadeIn .3s ease forwards; }
-  .btn { border:none; border-radius:7px; cursor:pointer; font-weight:600; font-size:.9rem; transition:all .15s; display:inline-flex; align-items:center; gap:.5rem; }
-  .btn-primary { background:${G.accent}; color:${G.bg}; padding:.75rem 1.5rem; }
-  .btn-primary:hover:not(:disabled) { background:${G.accentHover}; transform:translateY(-1px); }
-  .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
-  .btn-ghost { background:transparent; color:${G.text}; border:1px solid ${G.border}; padding:.6rem 1.2rem; }
-  .btn-ghost:hover { border-color:${G.accent}; color:${G.accent}; }
-  .btn-danger { background:transparent; color:${G.danger}; border:1px solid ${G.danger}22; padding:.5rem 1rem; font-size:.8rem; }
-  .btn-danger:hover { background:${G.danger}11; }
-  .input { background:#0A0F1A; border:1px solid ${G.border}; border-radius:7px; color:${G.text}; font-size:.9rem; padding:.75rem 1rem; width:100%; transition:border-color .2s; outline:none; }
-  .input:focus { border-color:${G.accent}; }
-  .input::placeholder { color:${G.faint}; }
-  .card { background:${G.surface}; border:1px solid ${G.border}; border-radius:12px; }
-  .nav-item { color:${G.muted}; font-size:.875rem; padding:.6rem .9rem; border-radius:7px; cursor:pointer; display:flex; align-items:center; gap:.6rem; transition:all .15s; user-select:none; }
-  .nav-item:hover { background:${G.accentDim}; color:${G.accent}; }
-  .nav-item.active { background:${G.accentDim}; color:${G.accent}; font-weight:600; }
-  .badge { font-size:.7rem; font-weight:700; padding:.2rem .55rem; border-radius:999px; }
-  .badge-green  { background:${G.accentDim}; color:${G.accent}; }
-  .badge-red    { background:#FF6B6B18; color:${G.danger}; }
-  .badge-yellow { background:#F59E0B18; color:${G.warn}; }
-  .spinner { width:18px; height:18px; border:2px solid ${G.border}; border-top-color:${G.accent}; border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
-  .tab { padding:.5rem 1rem; border-radius:6px; font-size:.85rem; cursor:pointer; color:${G.muted}; background:transparent; border:none; font-weight:500; transition:all .15s; }
-  .tab.active { background:${G.accentDim}; color:${G.accent}; font-weight:600; }
-  .alert-item { border-left:3px solid; padding:.9rem 1rem; border-radius:0 8px 8px 0; margin-bottom:.6rem; }
-  .alert-danger { border-color:${G.danger}; background:#FF6B6B08; }
-  .alert-warn   { border-color:${G.warn};   background:#F59E0B08; }
-  .alert-ok     { border-color:${G.accent}; background:${G.accentDim}22; }
-  .ticker-wrap  { overflow:hidden; background:${G.surface}; border-bottom:1px solid ${G.border}; padding:.45rem 0; }
-  .ticker-track { display:flex; white-space:nowrap; animation:ticker 50s linear infinite; }
-  .ticker-track:hover { animation-play-state:paused; }
-  .ticker-item  { display:inline-flex; align-items:center; gap:.5rem; padding:0 2rem; font-size:.78rem; border-right:1px solid ${G.border}; }
-  .fx-card { background:${G.surface}; border:1px solid ${G.border}; border-radius:10px; padding:1rem 1.2rem; transition:border-color .2s; }
-  .fx-card:hover { border-color:${G.accent}44; }
-  ::-webkit-scrollbar { width:4px; }
-  ::-webkit-scrollbar-thumb { background:${G.border}; border-radius:4px; }
-  @media(max-width:768px){
-    .sidebar { display:none !important; }
-    .kpi-grid { grid-template-columns:1fr 1fr !important; }
-    .bottom-grid { grid-template-columns:1fr !important; }
-    .fx-grid { grid-template-columns:1fr 1fr !important; }
-  }
+async function render(){
+
+let h="";
+
+if(page=="dashboard"){
+
+h=`
+<div class="title">Dashboard</div>
+<div class="sub">
+Caja, facturación, stock, presupuesto, inversiones y mercados.
+</div>
+
+<div class="grid">
+
+${card("Caja actual",money(12845000),"Demo")}
+
+${card("Por cobrar",money(5115000),"Facturas pendientes")}
+
+${card("Inventario",money(5450000),"Valor a costo")}
+
+${card("Alertas","3","Vencimientos y stock")}
+
+</div>
+
+<div class="grid3" style="margin-top:18px">
+
+<div class="card">
+<b>🤖 IA financiera</b>
+
+<div class="alert bad">
+Hay facturas vencidas que pueden afectar la caja.
+</div>
+
+<div class="alert ok">
+La IA podrá explicar variaciones y proyectar escenarios.
+</div>
+
+</div>
+
+<div class="card">
+<b>📊 Proyección</b>
+
+<div class="value ok">
+${money(13872600)}
+</div>
+
+<div class="small">
+Escenario base a 30 días
+</div>
+
+</div>
+
+<div class="card">
+<b>🏗 Arquitectura</b>
+
+<p class="small">
+Frontend → API → Base de datos
+</p>
+
+<p class="small">
+BCRA → cotizaciones
+</p>
+
+<p class="small">
+IA / Forecasting → análisis
+</p>
+
+</div>
+
+</div>
 `;
 
-function Logo({ size=1.3 }) {
-  return <span style={{ fontFamily:G.fontDisplay, fontWeight:700, fontSize:`${size}rem`, letterSpacing:"-0.02em" }}><span style={{ color:G.accent }}>kon</span>talo</span>;
-}
-function Spin() { return <div className="spinner"/>; }
-
-function KPI({ label, value, delta, up, loading }) {
-  return (
-    <div className="card" style={{ padding:"1.25rem 1.4rem" }}>
-      <div style={{ fontSize:".7rem", color:G.faint, textTransform:"uppercase", letterSpacing:".08em", marginBottom:".5rem" }}>{label}</div>
-      <div style={{ fontFamily:G.fontDisplay, fontSize:"1.75rem", fontWeight:700, lineHeight:1, marginBottom:".35rem" }}>
-        {loading ? <Spin/> : value}
-      </div>
-      {delta && <div style={{ fontSize:".78rem", color:up?G.accent:G.danger }}>{up?"â–²":"â–¼"} {delta}</div>}
-    </div>
-  );
 }
 
-const ChartTip = ({ active, payload, label }) => {
-  if (!active||!payload?.length) return null;
-  return (
-    <div style={{ background:G.surface, border:`1px solid ${G.border}`, borderRadius:8, padding:".7rem 1rem", fontSize:".8rem" }}>
-      <div style={{ color:G.muted, marginBottom:".3rem" }}>{label}</div>
-      {payload.map(p=>(
-        <div key={p.name} style={{ color:G.accent, fontWeight:600 }}>
-          {p.name==="projected"?"Projected":"Actual"}: {fmt(p.value)}
-        </div>
-      ))}
-    </div>
-  );
-};
+else if(page=="cashflow"){
 
-function LiveTicker({ fx, commodities, loading }) {
-  if (loading) return (
-    <div className="ticker-wrap" style={{ display:"flex", alignItems:"center", gap:".75rem", padding:".45rem 1.5rem", fontSize:".78rem", color:G.faint }}>
-      <Spin/> Loading live market ratesâ€¦
-    </div>
-  );
-  const items = [
-    fx?.EUR   && { label:"EUR/USD", val:(1/fx.EUR).toFixed(4), up:true  },
-    fx?.ARS   && { label:"USD/ARS", val:fx.ARS.toFixed(2),     up:false },
-    fx?.BRL   && { label:"USD/BRL", val:fx.BRL.toFixed(4),     up:false },
-    fx?.MXN   && { label:"USD/MXN", val:fx.MXN.toFixed(4),     up:false },
-    fx?.GBP   && { label:"GBP/USD", val:(1/fx.GBP).toFixed(4), up:true  },
-    fx?.CNY   && { label:"USD/CNY", val:fx.CNY.toFixed(4),     up:false },
-    commodities?.goldUSD   && { label:"GOLD oz",   val:`$${commodities.goldUSD.toLocaleString()}`,  up:true  },
-    commodities?.silverUSD && { label:"SILVER oz", val:`$${commodities.silverUSD.toFixed(2)}`,      up:false },
-    { label:"CRUDE OIL", val:"$73.40", up:true  },
-    { label:"SOYBEANS",  val:"$10.82", up:false },
-    { label:"WHEAT",     val:"$5.64",  up:true  },
-    { label:"CORN",      val:"$4.38",  up:false },
-  ].filter(Boolean);
-  const all = [...items, ...items];
-  return (
-    <div className="ticker-wrap">
-      <div className="ticker-track">
-        {all.map((item,i)=>(
-          <span key={i} className="ticker-item">
-            <span style={{ color:G.faint }}>{item.label}</span>
-            <span style={{ color:item.up?G.accent:G.danger, fontWeight:600 }}>{item.val}</span>
-            <span style={{ color:item.up?G.accent:G.danger, fontSize:".65rem" }}>{item.up?"â–²":"â–¼"}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
+h=`
+<div class="title">Flujo de caja</div>
+<div class="sub">Control y proyección de liquidez.</div>
+
+<div class="grid">
+
+${card("Caja inicial",money(12845000))}
+${card("Ingresos",money(4670000))}
+${card("Egresos",money(3210000))}
+${card("Caja proyectada",money(14260000))}
+
+</div>
+
+<div class="card" style="margin-top:18px">
+
+<b>Escenarios</b>
+
+<table class="table">
+
+<tr>
+<th>Escenario</th>
+<th>Proyección</th>
+<th>Lectura</th>
+</tr>
+
+<tr>
+<td>Pesimista</td>
+<td class="bad">${money(12331200)}</td>
+<td>Menores cobranzas</td>
+</tr>
+
+<tr>
+<td>Base</td>
+<td class="ok">${money(13872600)}</td>
+<td>Esperado</td>
+</tr>
+
+<tr>
+<td>Optimista</td>
+<td class="ok">${money(14771750)}</td>
+<td>Cobranzas aceleradas</td>
+</tr>
+
+</table>
+</div>
+`;
+
 }
 
-function LoginScreen({ onLogin }) {
-  const [email,setEmail]=useState(""); const [pass,setPass]=useState("");
-  const [loading,setLoading]=useState(false); const [error,setError]=useState("");
-  const handle = () => {
-    if(!email||!pass){setError("Please fill in all fields.");return;}
-    setError("");setLoading(true);
-    setTimeout(()=>{setLoading(false);onLogin({name:"Ezequiel Prilusky",email});},1100);
-  };
-  return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"1.5rem" }}>
-      <div style={{ width:"100%", maxWidth:400 }} className="fade-in">
-        <div style={{ textAlign:"center", marginBottom:"2.5rem" }}>
-          <Logo size={1.9}/><p style={{ color:G.muted, marginTop:".6rem", fontSize:".9rem" }}>Sign in to your account</p>
-        </div>
-        <div className="card" style={{ padding:"2rem" }}>
-          {[["Email","email","you@company.com",email,setEmail],["Password","password","â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢",pass,setPass]].map(([lbl,type,ph,val,set],i)=>(
-            <div key={lbl} style={{ marginBottom:i===0?"1rem":"1.4rem" }}>
-              <label style={{ display:"block", fontSize:".78rem", color:G.muted, marginBottom:".35rem" }}>{lbl}</label>
-              <input className="input" type={type} placeholder={ph} value={val} onChange={e=>set(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handle()}/>
-            </div>
-          ))}
-          {error&&<div style={{ color:G.danger, fontSize:".8rem", marginBottom:".9rem" }}>{error}</div>}
-          <button className="btn btn-primary" style={{ width:"100%", justifyContent:"center" }} onClick={handle} disabled={loading}>
-            {loading?<><Spin/> Signing inâ€¦</>:"Sign in"}
-          </button>
-          <p style={{ textAlign:"center", marginTop:"1.1rem", fontSize:".75rem", color:G.faint }}>Demo: any email + any password</p>
-        </div>
-      </div>
-    </div>
-  );
+else if(page=="invoices"){
+
+let d=await api("/api/invoices");
+
+h=`
+<div class="title">Facturación</div>
+<div class="sub">Cuentas por cobrar y vencimientos.</div>
+
+<div class="toolbar">
+<button class="btn primary" onclick="addInvoice()">
++ Nueva factura
+</button>
+</div>
+
+<div class="card">
+
+<table class="table">
+
+<tr>
+<th>ID</th>
+<th>Cliente</th>
+<th>Importe</th>
+<th>Vencimiento</th>
+<th>Estado</th>
+</tr>
+
+${d.map(x=>`
+
+<tr>
+<td>${x.id}</td>
+<td>${x.client}</td>
+<td>${money(x.amount)}</td>
+<td>${x.due}</td>
+
+<td>
+<span class="badge ${
+x.status=="Pagada"
+?"green"
+:x.status=="Vencida"
+?"red"
+:""
+}">
+${x.status}
+</span>
+</td>
+
+</tr>
+
+`).join("")}
+
+</table>
+
+</div>
+`;
+
 }
 
-function Sidebar({ page, setPage, user, company, companies, setCompany, onLogout }) {
-  return (
-    <div className="sidebar" style={{ width:220, background:G.surface, borderRight:`1px solid ${G.border}`, display:"flex", flexDirection:"column", height:"100vh", position:"sticky", top:0, flexShrink:0 }}>
-      <div style={{ padding:"1.4rem 1.2rem", borderBottom:`1px solid ${G.border}` }}><Logo/></div>
-      <div style={{ padding:"1rem 1.2rem", borderBottom:`1px solid ${G.border}` }}>
-        <div style={{ fontSize:".68rem", color:G.faint, textTransform:"uppercase", letterSpacing:".1em", marginBottom:".5rem" }}>Active company</div>
-        <select style={{ background:G.bg, border:`1px solid ${G.border}`, color:G.text, borderRadius:6, padding:".5rem .7rem", width:"100%", fontSize:".82rem", cursor:"pointer", outline:"none" }}
-          value={company.id} onChange={e=>setCompany(companies.find(c=>c.id===+e.target.value))}>
-          {companies.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-      </div>
-      <nav style={{ padding:".75rem", flex:1 }}>
-        {NAV.map(n=>(
-          <div key={n.id} className={`nav-item ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>
-            <span>{n.icon}</span><span style={{ flex:1 }}>{n.label}</span>
-            {n.badge&&<span className="badge badge-red">{n.badge}</span>}
-          </div>
-        ))}
-      </nav>
-      <div style={{ padding:"1rem 1.2rem", borderTop:`1px solid ${G.border}` }}>
-        <div style={{ display:"flex", alignItems:"center", gap:".6rem", marginBottom:".75rem" }}>
-          <div style={{ width:32, height:32, borderRadius:"50%", background:G.accentDim, display:"flex", alignItems:"center", justifyContent:"center", fontSize:".7rem", fontWeight:700, color:G.accent, flexShrink:0 }}>
-            {user.name.split(" ").map(w=>w[0]).join("").slice(0,2)}
-          </div>
-          <div style={{ minWidth:0 }}>
-            <div style={{ fontSize:".8rem", fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.name}</div>
-            <div style={{ fontSize:".68rem", color:G.faint }}>{company.plan} plan</div>
-          </div>
-        </div>
-        <button className="btn btn-danger" style={{ width:"100%" }} onClick={onLogout}>Sign out</button>
-      </div>
-    </div>
-  );
-}.      function DashboardPage({ company, fx }) {
-  const [forecast,setForecast]=useState(null); const [loading,setLoading]=useState(true); const [error,setError]=useState(null);
-  useEffect(()=>{ setLoading(true);setError(null); fetchForecast(company.seed).then(setForecast).catch(e=>setError(e.message)).finally(()=>setLoading(false)); },[company.id]);
-  const chartData=MONTHS.map((m,i)=>({ month:m, actual:i<6?Math.round(company.seed[Math.min(i,5)]*1000):null, projected:forecast?Math.round((company.seed[5]+forecast.tendencia*(i-5))*1000):Math.round(company.seed[5]*1000) }));
-  const latest=company.seed[5]*1000, prev=company.seed[4]*1000;
-  const delta=(((latest-prev)/prev)*100).toFixed(1);
-  const fxRate=company.currency!=="USD"&&fx?fx[company.currency]:null;
-  return (
-    <div className="fade-in">
-      <div style={{ marginBottom:"1.75rem" }}>
-        <h1 style={{ fontFamily:G.fontDisplay, fontSize:"1.5rem", fontWeight:700 }}>Dashboard</h1>
-        <p style={{ color:G.muted, fontSize:".85rem", marginTop:".2rem" }}>{company.name} Â· {company.sector}{fxRate&&<span style={{ marginLeft:".75rem", color:G.accent, fontSize:".8rem" }}>1 USD = {fxRate.toFixed(2)} {company.currency}</span>}</p>
-      </div>
-      <div className="kpi-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"1rem", marginBottom:"1.5rem" }}>
-        <KPI label="Current cash flow" value={fmt(latest)} delta={`${delta}% vs last month`} up={+delta>0}/>
-        <KPI label="AI projection (next)" value={loading?"â€¦":error?"Error":fmt(Math.round(forecast.proyeccion*1000))} delta={loading?"Calling APIâ€¦":error?"API offline":`Trend ${forecast.tendencia>0?"â†‘":"â†“"} ${Math.abs(forecast.tendencia).toFixed(1)}K/mo`} up={!error&&forecast?.tendencia>0} loading={loading}/>
-        <KPI label="Avg monthly (6mo)" value={loading?"â€¦":error?"Error":fmt(Math.round(forecast.promedio*1000))} delta="From live API" up={true} loading={loading}/>
-        <KPI label="Active alerts" value="2" delta="1 critical" up={false}/>
-      </div>
-      {error&&<div className="card" style={{ padding:".9rem 1.25rem", marginBottom:"1.25rem", borderColor:G.danger+"44", fontSize:".85rem", color:G.danger }}>âš  {error} â€” Render may be cold-starting (~30s).</div>}
-      <div className="card" style={{ padding:"1.5rem", marginBottom:"1.25rem" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.25rem" }}>
-          <div><div style={{ fontFamily:G.fontDisplay, fontWeight:600 }}>Cash flow â€” 12 months</div><div style={{ color:G.muted, fontSize:".78rem", marginTop:".1rem" }}>Actual + AI projection</div></div>
-          <div style={{ display:"flex", gap:"1rem", fontSize:".75rem" }}><span style={{ color:G.accent }}>â— Actual</span><span style={{ color:G.accent+"77" }}>â— Projected</span></div>
-        </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={chartData} margin={{ top:5,right:10,left:0,bottom:0 }}>
-            <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={G.accent} stopOpacity={.3}/><stop offset="100%" stopColor={G.accent} stopOpacity={0}/></linearGradient></defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={G.border}/>
-            <XAxis dataKey="month" tick={{ fill:G.faint,fontSize:11 }} axisLine={false} tickLine={false}/>
-            <YAxis tickFormatter={v=>`$${v/1000}K`} tick={{ fill:G.faint,fontSize:11 }} axisLine={false} tickLine={false} width={50}/>
-            <Tooltip content={<ChartTip/>}/>
-            <Area type="monotone" dataKey="actual" stroke={G.accent} strokeWidth={2} fill="url(#g1)" dot={false} name="actual" connectNulls={false}/>
-            <Area type="monotone" dataKey="projected" stroke={G.accent} strokeWidth={1.5} strokeDasharray="5 3" fill="none" dot={false} name="projected" opacity={.5}/>
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="bottom-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem" }}>
-        <div className="card" style={{ padding:"1.25rem" }}>
-          <div style={{ fontFamily:G.fontDisplay, fontWeight:600, marginBottom:"1rem" }}>Recent invoices</div>
-          {INVOICES.slice(0,4).map(inv=>(
-            <div key={inv.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:".6rem 0", borderBottom:`1px solid ${G.border}` }}>
-              <div><div style={{ fontSize:".85rem", fontWeight:500 }}>{inv.client}</div><div style={{ fontSize:".72rem", color:G.faint }}>{inv.id} Â· {inv.date}</div></div>
-              <div style={{ textAlign:"right"
+else if(page=="stock"){
+
+let d=await api("/api/stock");
+
+h=`
+<div class="title">Stock</div>
+<div class="sub">Inventario y reposición.</div>
+
+<div class="toolbar">
+
+<button class="btn primary" onclick="addStock()">
++ Producto
+</button>
+
+</div>
+
+<div class="card">
+
+<table class="table">
+
+<tr>
+<th>SKU</th>
+<th>Producto</th>
+<th>Unidades</th>
+<th>Mínimo</th>
+<th>Costo</th>
+<th>Estado</th>
+</tr>
+
+${d.map(x=>`
+
+<tr>
+
+<td>${x.sku}</td>
+
+<td>${x.name}</td>
+
+<td>${x.qty}</td>
+
+<td>${x.min}</td>
+
+<td>${money(x.cost)}</td>
+
+<td>
+
+${
+x.qty<x.min
+?'<span class="badge">Reponer</span>'
+:'<span class="badge green">OK</span>'
+}
+
+</td>
+
+</tr>
+
+`).join("")}
+
+</table>
+
+</div>
+`;
+
+}
+
+else if(page=="budget"){
+
+let d=await api("/api/budgets");
+
+h=`
+<div class="title">Presupuesto</div>
+<div class="sub">Planificado contra ejecutado.</div>
+
+<div class="grid3">
+
+${d.map(x=>{
+
+let p=Math.round(x.spent/x.budget*100);
+
+return`
+
+<div class="card">
+
+<b>${x.name}</b>
+
+<div class="value">
+${p}%
+</div>
+
+<div class="small">
+${money(x.spent)} / ${money(x.budget)}
+</div>
+
+</div>
+
+`;
+
+}).join("")}
+
+</div>
+`;
+
+}
+
+else if(page=="investments"){
+
+let d=await api("/api/investments");
+
+h=`
+<div class="title">Inversiones</div>
+<div class="sub">Registro y rendimiento estimado.</div>
+
+<div class="card">
+
+<table class="table">
+
+<tr>
+<th>Instrumento</th>
+<th>Capital</th>
+<th>Tasa</th>
+<th>Rendimiento anual estimado</th>
+</tr>
+
+${d.map(x=>`
+
+<tr>
+
+<td>${x.name}</td>
+
+<td>${money(x.amount)}</td>
+
+<td>${x.rate}%</td>
+
+<td class="ok">
+${money(x.amount*x.rate/100)}
+</td>
+
+</tr>
+
+`).join("")}
+
+</table>
+
+</div>
+`;
+
+}
+
+else if(page=="markets"){
+
+let d=await api("/api/bcra");
+
+h=`
+<div class="title">Cotizaciones BCRA</div>
+
+<div class="sub">
+Cotizaciones obtenidas desde el backend mediante la API pública del BCRA.
+</div>
+
+<div class="market">
+
+${Object.entries(d).map(([k,v])=>`
+
+<div class="card">
+
+<div class="small">${k}</div>
+
+<div class="value">
+${v??"—"}
+</div>
+
+<div class="small">
+ARS · BCRA
+</div>
+
+</div>
+
+`).join("")}
+
+</div>
+`;
+
+}
+
+else if(page=="commodities"){
+
+h=`
+<div class="title">Commodities</div>
+
+<div class="sub">
+Módulo preparado para proveedor externo.
+Las claves quedan en el backend.
+</div>
+
+<div class="market">
+
+${["Oro","Plata","Petróleo","Soja","Trigo","Maíz"].map(x=>`
+
+<div class="card">
+
+<b>${x}</b>
+
+<div class="value">—</div>
+
+<div class="small">
+Sin proveedor configurado
+</div>
+
+</div>
+
+`).join("")}
+
+</div>
+`;
+
+}
+
+else{
+
+let d=await api("/api/alerts");
+
+h=`
+<div class="title">Alertas</div>
+
+<div class="sub">
+Eventos financieros e inventario.
+</div>
+
+${d.map(x=>`
+
+<div class="alert ${x.type}">
+
+<b>${x.title}</b>
+
+<br>
+
+${x.message}
+
+</div>
+
+`).join("")
+||
+'<div class="alert ok">No hay alertas.</div>'}
+
+`;
+
+}
+
+document.getElementById("main").innerHTML=h;
+nav();
+
+}
+
+async function addInvoice(){
+
+let c=prompt("Cliente");
+let a=Number(prompt("Importe ARS"));
+
+if(c&&a){
+
+await api("/api/invoices",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+client:c,
+amount:a
+})
+});
+
+render();
+
+}
+
+}
+
+async function addStock(){
+
+let n=prompt("Producto");
+let q=Number(prompt("Cantidad"));
+let c=Number(prompt("Costo unitario ARS"));
+
+if(n&&q&&c){
+
+await api("/api/stock",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+name:n,
+qty:q,
+cost:c,
+min:10
+})
+});
+
+render();
+
+}
+
+}
+
+render();
+
+</script>
+
+</body>
+</html>
+"""
+
+def conn():
+    c=sqlite3.connect(DB)
+    c.row_factory=sqlite3.Row
+    return c
+
+
+def init():
+
+    c=conn()
+
+    c.executescript("""
+
+    CREATE TABLE IF NOT EXISTS invoices(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client TEXT,
+        amount REAL,
+        due TEXT,
+        status TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS stock(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sku TEXT,
+        name TEXT,
+        qty INTEGER,
+        min INTEGER,
+        cost REAL
+    );
+
+    CREATE TABLE IF NOT EXISTS budgets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        budget REAL,
+        spent REAL
+    );
+
+    CREATE TABLE IF NOT EXISTS investments(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        amount REAL,
+        rate REAL
+    );
+
+    """)
+
+    if c.execute(
+        "SELECT COUNT(*) n FROM invoices"
+    ).fetchone()["n"]==0:
+
+        c.executemany(
+            "INSERT INTO invoices(client,amount,due,status) VALUES(?,?,?,?)",
+            [
+                ("BuildCo Ltd",1240000,"2026-09-05","Pendiente"),
+                ("Metro Supplies",875000,"2026-08-18","Vencida"),
+                ("Alpha Group",3120000,"2026-09-12","Pagada")
+            ]
+        )
+
+    if c.execute(
+        "SELECT COUNT(*) n FROM stock"
+    ).fetchone()["n"]==0:
+
+        c.executemany(
+            "INSERT INTO stock(sku,name,qty,min,cost) VALUES(?,?,?,?,?)",
+            [
+                ("SKU-001","Taladro profesional",24,10,185000),
+                ("SKU-002","Amoladora 900W",7,12,132000),
+                ("SKU-003","Disco de corte",80,30,4200)
+            ]
+        )
+
+    if c.execute(
+        "SELECT COUNT(*) n FROM budgets"
+    ).fetchone()["n"]==0:
+
+        c.executemany(
+            "INSERT INTO budgets(name,budget,spent) VALUES(?,?,?)",
+            [
+                ("Marketing",500000,420000),
+                ("Compras",3500000,2980000),
+                ("Operación",1800000,1710000)
+            ]
+        )
+
+    if c.execute(
+        "SELECT COUNT(*) n FROM investments"
+    ).fetchone()["n"]==0:
+
+        c.executemany(
+            "INSERT INTO investments(name,amount,rate) VALUES(?,?,?)",
+            [
+                ("Plazo fijo",2000000,32),
+                ("FCI money market",850000,28)
+            ]
+        )
+
+    c.commit()
+    c.close()
+
+
+init()
+
+
+@app.get("/")
+def home():
+    return render_template_string(HTML)
+
+
+@app.get("/api/invoices")
+def invoices():
+
+    return jsonify([
+        dict(x)
+        for x in conn().execute(
+            "SELECT * FROM invoices ORDER BY id DESC"
+        )
+    ])
+
+
+@app.post("/api/invoices")
+def add_invoice():
+
+    x=request.json or {}
+
+    c=conn()
+
+    c.execute(
+        """
+        INSERT INTO invoices(client,amount,due,status)
+        VALUES(?,?,date('now'),'Pendiente')
+        """,
+        (
+            x.get("client","Cliente"),
+            float(x.get("amount",0))
+        )
+    )
+
+    c.commit()
+    c.close()
+
+    return jsonify({"ok":True})
+
+
+@app.get("/api/stock")
+def stock():
+
+    return jsonify([
+        dict(x)
+        for x in conn().execute(
+            "SELECT * FROM stock ORDER BY id DESC"
+        )
+    ])
+
+
+@app.post("/api/stock")
+def add_stock():
+
+    x=request.json or {}
+
+    c=conn()
+
+    c.execute(
+        """
+        INSERT INTO stock(sku,name,qty,min,cost)
+        VALUES(?,?,?,?,?)
+        """,
+        (
+            x.get("sku","SKU-"+str(os.getpid())),
+            x.get("name","Producto"),
+            int(x.get("qty",0)),
+            int(x.get("min",10)),
+            float(x.get("cost",0))
+        )
+    )
+
+    c.commit()
+    c.close()
+
+    return jsonify({"ok":True})
+
+
+@app.get("/api/budgets")
+def budgets():
+
+    return jsonify([
+        dict(x)
+        for x in conn().execute(
+            "SELECT * FROM budgets"
+        )
+    ])
+
+
+@app.get("/api/investments")
+def investments():
+
+    return jsonify([
+        dict(x)
+        for x in conn().execute(
+            "SELECT * FROM investments"
+        )
+    ])
+
+
+@app.get("/api/alerts")
+def alerts():
+
+    c=conn()
+    a=[]
+
+    for x in c.execute(
+        "SELECT * FROM invoices WHERE status='Vencida'"
+    ):
+
+        a.append({
+            "type":"bad",
+            "title":"Factura vencida",
+            "message":
+            f"{x['client']} · ARS {x['amount']:,.0f}"
+        })
+
+    for x in c.execute(
+        "SELECT * FROM stock WHERE qty<min"
+    ):
+
+        a.append({
+            "type":"",
+            "title":"Stock bajo",
+            "message":
+            f"{x['name']} · {x['qty']} unidades "
+            f"(mínimo {x['min']})"
+        })
+
+    c.close()
+
+    return jsonify(a)
+
+
+@app.get("/api/bcra")
+def bcra():
+
+    try:
+
+        url=(
+            "https://api.bcra.gob.ar/"
+            "estadisticascambiarias/v1.0/"
+            "Cotizaciones"
+        )
+
+        r=requests.get(
+            url,
+            timeout=8
+        )
+
+        r.raise_for_status()
+
+        data=r.json()
+
+        rows=data.get(
+            "results",
+            {}
+        ).get(
+            "detalle",
+            []
+        )
+
+        wanted={
+            "USD",
+            "EUR",
+            "BRL",
+            "CLP",
+            "COP",
+            "GBP",
+            "CNY",
+            "UYU"
+        }
+
+        return jsonify({
+
+            x["codigoMoneda"]:
+            x.get("tipoCotizacion")
+
+            for x in rows
+
+            if x.get("codigoMoneda") in wanted
+
+        })
+
+    except Exception:
+
+        return jsonify({
+
+            "USD":"Sin conexión",
+            "EUR":"Sin conexión",
+            "BRL":"Sin conexión"
+
+        })
+
+
+@app.get("/health")
+def health():
+
+    return jsonify({
+        "status":"ok",
+        "app":"Kontalo"
+    })
+
+
+if __name__=="__main__":
+
+    app.run(
+        host="0.0.0.0",
+        port=int(
+            os.getenv("PORT","5000")
+        ),
+        debug=False
+    )
